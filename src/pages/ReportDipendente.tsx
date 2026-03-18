@@ -48,7 +48,7 @@ type Iscrizione = {
 
 const MONTHS = ['Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic']
 const CURRENT_YEAR = new Date().getFullYear()
-const YEARS = [2024, 2025, 2026, 2027]
+const YEARS = [2026, 2027, 2028, 2029, 2030]
 
 const PRIORITY_COLORS: Record<number, string> = {
   1: 'bg-slate-400',
