@@ -30,7 +30,7 @@ const navSections: NavSection[] = [
     ],
   },
   {
-    label: 'Anagrafiche',
+    label: 'Dati',
     items: [
       { to: '/coe', label: 'CoE', icon: Building2 },
       { to: '/sedi', label: 'Sedi', icon: MapPin },
@@ -41,7 +41,7 @@ const navSections: NavSection[] = [
     ],
   },
   {
-    label: 'Dati',
+    label: 'Utilità',
     items: [
       { to: '/importa', label: 'Importa dati', icon: Upload },
       { to: '/esporta', label: 'Esporta dati', icon: Download },
