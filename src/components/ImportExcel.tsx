@@ -82,7 +82,7 @@ export default function ImportExcel() {
       const sediRows = readSheet('Sedi')
       for (const row of sediRows) {
         const idSede = String(row['ID Sede'] ?? row['ID_Sede'] ?? row['IDSede'] ?? '').trim()
-        const areaGeografica = String(row['Area Geografica'] ?? row['AreaGeografica'] ?? '').trim()
+        const areaGeografica = String(row['Area Geografica / Sede'] ?? row['Area Geografica'] ?? row['AreaGeografica'] ?? '').trim()
         if (idSede && areaGeografica) {
           parsed.sedi.push({ idSede, areaGeografica })
         }
@@ -159,7 +159,7 @@ export default function ImportExcel() {
         if (!idCorso || !titolo) continue
 
         const oreRaw = row['Ore Aula'] ?? row['OreAula']
-        const prioritaRaw = row['Priorità'] ?? row['Priorita'] ?? row['Priority']
+        const prioritaRaw = row['Priorità (calore 1-5)'] ?? row['Priorità'] ?? row['Priorita'] ?? row['Priority']
 
         parsed.corsi.push({
           idCorso,
