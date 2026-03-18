@@ -350,7 +350,7 @@ export default function DipendentiList() {
                         onChange={e => setCoeField(i, 'coeId', e.target.value)}
                       >
                         <option value="">— Seleziona CoE —</option>
-                        {coeList?.map(c => <option key={c._id} value={c._id}>{c.nome}</option>)}
+                        {coeList?.filter(c => c._id === entry.coeId || !coeEntries.some((e, j) => j !== i && e.coeId === c._id)).map(c => <option key={c._id} value={c._id}>{c.nome}</option>)}
                       </select>
                       <div className="relative w-24">
                         <input
@@ -392,7 +392,7 @@ export default function DipendentiList() {
                         onChange={e => setSedeField(i, 'sedeId', e.target.value)}
                       >
                         <option value="">— Seleziona Sede —</option>
-                        {sediList?.map(s => <option key={s._id} value={s._id}>{s.areaGeografica}</option>)}
+                        {sediList?.filter(s => s._id === entry.sedeId || !sedeEntries.some((e, j) => j !== i && e.sedeId === s._id)).map(s => <option key={s._id} value={s._id}>{s.areaGeografica}</option>)}
                       </select>
                       <div className="relative w-24">
                         <input
