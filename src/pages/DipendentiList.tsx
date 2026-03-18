@@ -147,11 +147,12 @@ export default function DipendentiList() {
       key: 'coe',
       label: 'CoE',
       render: (row) => {
-        if (row.coeMultipli.length > 0) {
+        const coeList = row.coeMultipli ?? []
+        if (coeList.length > 0) {
           return (
             <div className="flex flex-wrap gap-1">
-              {row.coeMultipli.map((dc) => (
-                <span key={dc._id} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-indigo-50 text-indigo-700 font-medium">
+              {coeList.map((dc) => (
+                <span key={String(dc._id)} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-indigo-50 text-indigo-700 font-medium">
                   {dc.coe?.nome ?? '—'}
                   {dc.percentuale != null && <span className="opacity-70">{dc.percentuale}%</span>}
                 </span>
@@ -159,18 +160,19 @@ export default function DipendentiList() {
             </div>
           )
         }
-        return row.coe?.nome ?? <span className="text-slate-400">—</span>
+        return row.coe?.nome ? <span>{row.coe.nome}</span> : <span className="text-slate-400">—</span>
       },
     },
     {
       key: 'sede',
       label: 'Sede',
       render: (row) => {
-        if (row.sediMultiple.length > 1) {
+        const sediList = row.sediMultiple ?? []
+        if (sediList.length > 1) {
           return (
             <div className="flex flex-wrap gap-1">
-              {row.sediMultiple.map((ds) => (
-                <span key={ds._id} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-emerald-50 text-emerald-700 font-medium">
+              {sediList.map((ds) => (
+                <span key={String(ds._id)} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-emerald-50 text-emerald-700 font-medium">
                   {ds.sede?.areaGeografica ?? '—'}
                   {ds.percentuale != null && ds.percentuale < 100 && <span className="opacity-70">{ds.percentuale}%</span>}
                 </span>
@@ -178,7 +180,7 @@ export default function DipendentiList() {
             </div>
           )
         }
-        return row.sede?.areaGeografica ?? <span className="text-slate-400">—</span>
+        return row.sede?.areaGeografica ? <span>{row.sede.areaGeografica}</span> : <span className="text-slate-400">—</span>
       },
     },
     {
