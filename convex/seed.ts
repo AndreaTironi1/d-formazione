@@ -52,6 +52,9 @@ export const seedAll = mutation({
     for (const r of await ctx.db.query("dipendenti_coe").collect()) {
       await ctx.db.delete(r._id);
     }
+    for (const r of await ctx.db.query("dipendenti_sedi").collect()) {
+      await ctx.db.delete(r._id);
+    }
     for (const r of await ctx.db.query("corsi").collect()) {
       await ctx.db.delete(r._id);
     }
@@ -107,13 +110,28 @@ export const seedAll = mutation({
       "educational tech":                  "coe educational tech",
     };
 
-    // Dipendenti presenti in più CoE senza percentuale (da Pianificazione.docx)
-    const MULTI_COE: Record<string, string[]> = {
-      "vincenzo orballo":  ["coe programmazione & controllo", "coe human resources"],
-      "claudia lepore":    ["coe human resources", "coe educational tech"],
-      "daniela binelli":   ["coe programmazione & controllo", "coe educational tech"],
-      "anna terzuolo":     ["coe programmazione & controllo", "coe governance risk & compliance"],
-      "simona schiavi":    ["coe programmazione & controllo", "coe governance risk & compliance"],
+    // Dipendenti con più CoE (con percentuale opzionale)
+    type CoeEntry = { nome: string; pct?: number };
+    const MULTI_COE: Record<string, CoeEntry[]> = {
+      "vincenzo orballo":  [{ nome: "coe programmazione & controllo" }, { nome: "coe human resources" }],
+      "claudia lepore":    [{ nome: "coe human resources" }, { nome: "coe educational tech" }],
+      "daniela binelli":   [{ nome: "coe programmazione & controllo" }, { nome: "coe educational tech" }],
+      "anna terzuolo":     [{ nome: "coe programmazione & controllo" }, { nome: "coe governance risk & compliance" }],
+      "simona schiavi":    [{ nome: "coe programmazione & controllo" }, { nome: "coe governance risk & compliance" }],
+      // Dipendenti con split % CoE (da Pianificazione.docx — campo sede)
+      "massimo federici":  [{ nome: "coe programmazione & controllo", pct: 70 }, { nome: "coe educational tech", pct: 30 }],
+      "antonio fadda":     [{ nome: "coe programmazione & controllo", pct: 50 }, { nome: "coe educational tech", pct: 50 }],
+      "barbara piperno":   [{ nome: "coe programmazione & controllo", pct: 50 }, { nome: "coe governance risk & compliance", pct: 50 }],
+      "chiara soro":       [{ nome: "coe programmazione & controllo", pct: 50 }, { nome: "coe human resources", pct: 50 }],
+      "tina buzzanca":     [{ nome: "coe human resources", pct: 50 }, { nome: "coe governance risk & compliance", pct: 50 }],
+      "chiara solinas":    [{ nome: "coe governance risk & compliance", pct: 50 }, { nome: "coe educational tech", pct: 50 }],
+    };
+
+    // Dipendenti con più sedi (% mancante → Lombardia)
+    type SedeEntry = { nome: string; pct: number };
+    const MULTI_SEDE: Record<string, SedeEntry[]> = {
+      "simona schiavi":  [{ nome: "liguria", pct: 50 }, { nome: "lombardia", pct: 50 }],
+      "daniela binelli": [{ nome: "liguria", pct: 50 }, { nome: "lombardia", pct: 50 }],
     };
 
     // Lookup: alias → exact nome → idCoe → substring
@@ -178,23 +196,24 @@ export const seedAll = mutation({
 
       const insertedCoeIds = new Set<string>();
 
-      // Caso 1: multi-CoE da MULTI_COE hardcoded (documento Pianificazione)
-      const multiCoeNomi = MULTI_COE[d.nome.toLowerCase()];
-      if (multiCoeNomi) {
-        for (const nomeCompleto of multiCoeNomi) {
-          const id = coeByNome.get(nomeCompleto);
+      // ── CoE: MULTI_COE hardcoded (con %) ha priorità ───────────────────────
+      const multiCoeEntries = MULTI_COE[d.nome.toLowerCase()];
+      if (multiCoeEntries) {
+        for (const entry of multiCoeEntries) {
+          const id = coeByNome.get(entry.nome) ?? resolveCoe(entry.nome);
           if (id && !insertedCoeIds.has(id)) {
-            await ctx.db.insert("dipendenti_coe", { dipendenteId: dipId, coeId: id });
+            await ctx.db.insert("dipendenti_coe", {
+              dipendenteId: dipId,
+              coeId: id,
+              percentuale: entry.pct,
+            });
             insertedCoeIds.add(id);
           }
         }
-      }
-
-      // Caso 2: CoE secondario con percentuale nel campo sede (es. "Liguria (30% Edu. Tech)")
-      if (insertedCoeIds.size === 0) {
+      } else {
+        // Fallback: CoE secondario con % nel campo sede es. "Liguria (30% Edu. Tech)"
         const secondario = parseSedeCoE(d.sedeNome);
         const idSecondario = secondario ? resolveCoe(secondario.coeNome) : undefined;
-
         if (coeId) {
           await ctx.db.insert("dipendenti_coe", {
             dipendenteId: dipId,
@@ -211,11 +230,30 @@ export const seedAll = mutation({
           });
           insertedCoeIds.add(idSecondario);
         }
-
-        // Caso 3: CoE singolo senza percentuale
         if (insertedCoeIds.size === 0 && coeId) {
           await ctx.db.insert("dipendenti_coe", { dipendenteId: dipId, coeId });
         }
+      }
+
+      // ── Sedi: MULTI_SEDE hardcoded o sede singola ─────────────────────────
+      const multiSedeEntries = MULTI_SEDE[d.nome.toLowerCase()];
+      if (multiSedeEntries) {
+        for (const entry of multiSedeEntries) {
+          const id = sediByArea.get(entry.nome) ?? resolveSede(entry.nome);
+          if (id) {
+            await ctx.db.insert("dipendenti_sedi", {
+              dipendenteId: dipId,
+              sedeId: id,
+              percentuale: entry.pct,
+            });
+          }
+        }
+      } else if (sedeId) {
+        await ctx.db.insert("dipendenti_sedi", {
+          dipendenteId: dipId,
+          sedeId,
+          percentuale: 100,
+        });
       }
     }
 

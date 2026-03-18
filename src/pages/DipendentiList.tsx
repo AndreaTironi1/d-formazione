@@ -8,6 +8,20 @@ import Modal from '../components/Modal'
 import ConfirmDialog from '../components/ConfirmDialog'
 import { cn } from '../lib/utils'
 
+type CoeMultiplo = {
+  _id: string
+  coeId: Id<'coe'>
+  percentuale?: number
+  coe: { nome: string; idCoe: string } | null
+}
+
+type SedeMultipla = {
+  _id: string
+  sedeId: Id<'sedi'>
+  percentuale?: number
+  sede: { areaGeografica: string } | null
+}
+
 type DipRow = {
   _id: Id<'dipendenti'>
   _creationTime: number
@@ -19,6 +33,8 @@ type DipRow = {
   sedeId?: Id<'sedi'>
   coe?: { nome: string } | null
   sede?: { areaGeografica: string } | null
+  coeMultipli: CoeMultiplo[]
+  sediMultiple: SedeMultipla[]
 }
 
 const SENIORITY_OPTIONS = ['Junior', 'Middle', 'Senior']
@@ -130,12 +146,40 @@ export default function DipendentiList() {
     {
       key: 'coe',
       label: 'CoE',
-      render: (row) => row.coe?.nome ?? <span className="text-slate-400">—</span>,
+      render: (row) => {
+        if (row.coeMultipli.length > 0) {
+          return (
+            <div className="flex flex-wrap gap-1">
+              {row.coeMultipli.map((dc) => (
+                <span key={dc._id} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-indigo-50 text-indigo-700 font-medium">
+                  {dc.coe?.nome ?? '—'}
+                  {dc.percentuale != null && <span className="opacity-70">{dc.percentuale}%</span>}
+                </span>
+              ))}
+            </div>
+          )
+        }
+        return row.coe?.nome ?? <span className="text-slate-400">—</span>
+      },
     },
     {
       key: 'sede',
       label: 'Sede',
-      render: (row) => row.sede?.areaGeografica ?? <span className="text-slate-400">—</span>,
+      render: (row) => {
+        if (row.sediMultiple.length > 1) {
+          return (
+            <div className="flex flex-wrap gap-1">
+              {row.sediMultiple.map((ds) => (
+                <span key={ds._id} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-emerald-50 text-emerald-700 font-medium">
+                  {ds.sede?.areaGeografica ?? '—'}
+                  {ds.percentuale != null && ds.percentuale < 100 && <span className="opacity-70">{ds.percentuale}%</span>}
+                </span>
+              ))}
+            </div>
+          )
+        }
+        return row.sede?.areaGeografica ?? <span className="text-slate-400">—</span>
+      },
     },
     {
       key: 'seniority',

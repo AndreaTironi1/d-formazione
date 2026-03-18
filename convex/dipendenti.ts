@@ -53,7 +53,17 @@ export const getAllWithRelations = query({
             return { ...dc, coe: c };
           })
         );
-        return { ...d, coe, sede, coeMultipli };
+        const dipendenteSedi = await ctx.db
+          .query("dipendenti_sedi")
+          .withIndex("by_dipendenteId", (q) => q.eq("dipendenteId", d._id))
+          .collect();
+        const sediMultiple = await Promise.all(
+          dipendenteSedi.map(async (ds) => {
+            const s = await ctx.db.get(ds.sedeId);
+            return { ...ds, sede: s };
+          })
+        );
+        return { ...d, coe, sede, coeMultipli, sediMultiple };
       })
     );
     return result;
@@ -93,21 +103,14 @@ export const update = mutation({
 export const remove = mutation({
   args: { id: v.id("dipendenti") },
   handler: async (ctx, args) => {
-    // Remove related dipendenti_coe records first
-    const related = await ctx.db
-      .query("dipendenti_coe")
-      .withIndex("by_dipendenteId", (q) => q.eq("dipendenteId", args.id))
-      .collect();
-    for (const r of related) {
+    for (const r of await ctx.db.query("dipendenti_coe").withIndex("by_dipendenteId", (q) => q.eq("dipendenteId", args.id)).collect()) {
       await ctx.db.delete(r._id);
     }
-    // Remove related iscrizioni
-    const iscrizioni = await ctx.db
-      .query("iscrizioni")
-      .withIndex("by_dipendenteId", (q) => q.eq("dipendenteId", args.id))
-      .collect();
-    for (const i of iscrizioni) {
-      await ctx.db.delete(i._id);
+    for (const r of await ctx.db.query("dipendenti_sedi").withIndex("by_dipendenteId", (q) => q.eq("dipendenteId", args.id)).collect()) {
+      await ctx.db.delete(r._id);
+    }
+    for (const r of await ctx.db.query("iscrizioni").withIndex("by_dipendenteId", (q) => q.eq("dipendenteId", args.id)).collect()) {
+      await ctx.db.delete(r._id);
     }
     await ctx.db.delete(args.id);
   },
@@ -137,6 +140,35 @@ export const getCoeAssociations = query({
   handler: async (ctx, args) => {
     return await ctx.db
       .query("dipendenti_coe")
+      .withIndex("by_dipendenteId", (q) => q.eq("dipendenteId", args.dipendenteId))
+      .collect();
+  },
+});
+
+// dipendenti_sedi operations
+export const addSedeAssociation = mutation({
+  args: {
+    dipendenteId: v.id("dipendenti"),
+    sedeId: v.id("sedi"),
+    percentuale: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    return await ctx.db.insert("dipendenti_sedi", args);
+  },
+});
+
+export const removeSedeAssociation = mutation({
+  args: { id: v.id("dipendenti_sedi") },
+  handler: async (ctx, args) => {
+    await ctx.db.delete(args.id);
+  },
+});
+
+export const getSedeAssociations = query({
+  args: { dipendenteId: v.id("dipendenti") },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("dipendenti_sedi")
       .withIndex("by_dipendenteId", (q) => q.eq("dipendenteId", args.dipendenteId))
       .collect();
   },

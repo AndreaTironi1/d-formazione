@@ -76,6 +76,15 @@ export default defineSchema({
     .index("by_coeId", ["coeId"])
     .index("by_priorita", ["priorita"]),
 
+  dipendenti_sedi: defineTable({
+    dipendenteId: v.id("dipendenti"),
+    sedeId: v.id("sedi"),
+    percentuale: v.optional(v.number()),
+  })
+    .index("by_dipendenteId", ["dipendenteId"])
+    .index("by_sedeId", ["sedeId"])
+    .index("by_dipendente_sede", ["dipendenteId", "sedeId"]),
+
   iscrizioni: defineTable({
     dipendenteId: v.id("dipendenti"),
     corsoId: v.id("corsi"),
