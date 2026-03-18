@@ -14,17 +14,15 @@ interface StatCardProps {
 
 function StatCard({ label, count, icon: Icon, to, color, bgColor }: StatCardProps) {
   return (
-    <Link to={to} className="card p-6 hover:shadow-md transition-shadow group">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm text-slate-500 font-medium">{label}</p>
-          <p className="text-3xl font-bold text-slate-900 mt-1">
-            {count ?? <span className="text-slate-300">...</span>}
-          </p>
+    <Link to={to} className="card p-4 hover:shadow-md transition-shadow group">
+      <div className="flex flex-col items-center text-center gap-2">
+        <div className={`w-9 h-9 ${bgColor} rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform`}>
+          <Icon className={`w-4 h-4 ${color}`} />
         </div>
-        <div className={`w-12 h-12 ${bgColor} rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform`}>
-          <Icon className={`w-6 h-6 ${color}`} />
-        </div>
+        <p className="text-2xl font-bold text-slate-900">
+          {count ?? <span className="text-slate-300">...</span>}
+        </p>
+        <p className="text-xs text-slate-500 font-medium">{label}</p>
       </div>
     </Link>
   )
@@ -57,7 +55,7 @@ export default function Dashboard() {
       </div>
 
       {/* Stats grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-6 gap-4">
         {stats.map((s) => <StatCard key={s.label} {...s} />)}
       </div>
 
