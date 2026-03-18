@@ -212,6 +212,7 @@ export default function ExportExcel() {
                 `${coeList?.length ?? 0} CoE`,
                 `${sediList?.length ?? 0} sedi`,
                 `${dipendenti?.length ?? 0} dipendenti`,
+                `${servizi?.length ?? 0} servizi`,
                 `${corsi?.length ?? 0} corsi`,
                 `${iscrizioni?.length ?? 0} iscrizioni`,
               ].join(' · ')}
