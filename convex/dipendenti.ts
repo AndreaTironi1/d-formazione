@@ -164,10 +164,12 @@ export const replaceCoeAssociations = mutation({
       await ctx.db.insert("dipendenti_coe", {
         dipendenteId: args.dipendenteId,
         coeId: e.coeId,
-        percentuale: e.percentuale,
+        ...(e.percentuale !== undefined ? { percentuale: e.percentuale } : {}),
       });
     }
-    await ctx.db.patch(args.dipendenteId, { coeId: args.entries[0]?.coeId });
+    if (args.entries.length > 0) {
+      await ctx.db.patch(args.dipendenteId, { coeId: args.entries[0].coeId });
+    }
   },
 });
 
@@ -190,10 +192,12 @@ export const replaceSedeAssociations = mutation({
       await ctx.db.insert("dipendenti_sedi", {
         dipendenteId: args.dipendenteId,
         sedeId: e.sedeId,
-        percentuale: e.percentuale,
+        ...(e.percentuale !== undefined ? { percentuale: e.percentuale } : {}),
       });
     }
-    await ctx.db.patch(args.dipendenteId, { sedeId: args.entries[0]?.sedeId });
+    if (args.entries.length > 0) {
+      await ctx.db.patch(args.dipendenteId, { sedeId: args.entries[0].sedeId });
+    }
   },
 });
 

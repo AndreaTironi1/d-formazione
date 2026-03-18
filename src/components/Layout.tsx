@@ -71,7 +71,7 @@ export default function Layout({ children }: LayoutProps) {
         {/* Version + User */}
         <div className="px-4 py-4 border-t border-slate-200 space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-xs text-slate-400 font-mono">v0.3.1</span>
+            <span className="text-xs text-slate-400 font-mono">v0.3.2</span>
             <span className="text-xs text-slate-400">2026-03-18</span>
           </div>
           <div className="flex items-center gap-3">

@@ -72,6 +72,7 @@ export default function DipendentiList() {
   const [editItem, setEditItem] = useState<DipRow | null>(null)
   const [deleteItem, setDeleteItem] = useState<DipRow | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
 
   const emptyForm = { nome: '', email: '', seniority: '', ruolo: 'Consulente' }
   const [formData, setFormData] = useState(emptyForm)
@@ -83,6 +84,7 @@ export default function DipendentiList() {
     setFormData(emptyForm)
     setCoeEntries([])
     setSedeEntries([])
+    setSaveError(null)
     setActiveTab('base')
     setModalOpen(true)
   }
@@ -90,8 +92,24 @@ export default function DipendentiList() {
   const openEdit = (item: DipRow) => {
     setEditItem(item)
     setFormData({ nome: item.nome, email: item.email ?? '', seniority: item.seniority ?? '', ruolo: item.ruolo })
-    setCoeEntries((item.coeMultipli ?? []).map(dc => ({ coeId: dc.coeId, percentuale: dc.percentuale != null ? String(dc.percentuale) : '' })))
-    setSedeEntries((item.sediMultiple ?? []).map(ds => ({ sedeId: ds.sedeId, percentuale: ds.percentuale != null ? String(ds.percentuale) : '' })))
+    setSaveError(null)
+
+    // Popola CoE dal bridge table; fallback al campo coeId diretto (dati pre-reimport)
+    const coeList = item.coeMultipli ?? []
+    setCoeEntries(
+      coeList.length > 0
+        ? coeList.map(dc => ({ coeId: dc.coeId, percentuale: dc.percentuale != null ? String(dc.percentuale) : '' }))
+        : item.coeId ? [{ coeId: item.coeId, percentuale: '' }] : []
+    )
+
+    // Popola Sede dal bridge table; fallback al campo sedeId diretto (dati pre-reimport)
+    const sedeList = item.sediMultiple ?? []
+    setSedeEntries(
+      sedeList.length > 0
+        ? sedeList.map(ds => ({ sedeId: ds.sedeId, percentuale: ds.percentuale != null ? String(ds.percentuale) : '' }))
+        : item.sedeId ? [{ sedeId: item.sedeId, percentuale: '' }] : []
+    )
+
     setActiveTab('base')
     setModalOpen(true)
   }
@@ -100,33 +118,43 @@ export default function DipendentiList() {
     e.preventDefault()
     if (!formData.nome.trim()) return
     setIsSubmitting(true)
+    setSaveError(null)
     try {
-      const coePayloadEntries = coeEntries
-        .filter(e => e.coeId)
-        .map(e => ({ coeId: e.coeId as Id<'coe'>, percentuale: e.percentuale ? Number(e.percentuale) : undefined }))
-      const sedePayloadEntries = sedeEntries
-        .filter(e => e.sedeId)
-        .map(e => ({ sedeId: e.sedeId as Id<'sedi'>, percentuale: e.percentuale ? Number(e.percentuale) : undefined }))
+      const coePayload = coeEntries
+        .filter(en => en.coeId)
+        .map(en => ({
+          coeId: en.coeId as Id<'coe'>,
+          ...(en.percentuale !== '' ? { percentuale: Number(en.percentuale) } : {}),
+        }))
+      const sedePayload = sedeEntries
+        .filter(en => en.sedeId)
+        .map(en => ({
+          sedeId: en.sedeId as Id<'sedi'>,
+          ...(en.percentuale !== '' ? { percentuale: Number(en.percentuale) } : {}),
+        }))
 
       const basePayload = {
         nome: formData.nome.trim(),
         email: formData.email.trim() || undefined,
         seniority: formData.seniority || undefined,
         ruolo: formData.ruolo,
-        coeId: (coePayloadEntries[0]?.coeId) ?? undefined,
-        sedeId: (sedePayloadEntries[0]?.sedeId) ?? undefined,
+        ...(coePayload[0]?.coeId ? { coeId: coePayload[0].coeId } : {}),
+        ...(sedePayload[0]?.sedeId ? { sedeId: sedePayload[0].sedeId } : {}),
       }
 
+      let dipId: Id<'dipendenti'>
       if (editItem) {
         await updateDip({ id: editItem._id, ...basePayload })
-        await replaceCoe({ dipendenteId: editItem._id, entries: coePayloadEntries })
-        await replaceSede({ dipendenteId: editItem._id, entries: sedePayloadEntries })
+        dipId = editItem._id
       } else {
-        const newId = await createDip(basePayload)
-        if (coePayloadEntries.length > 0) await replaceCoe({ dipendenteId: newId, entries: coePayloadEntries })
-        if (sedePayloadEntries.length > 0) await replaceSede({ dipendenteId: newId, entries: sedePayloadEntries })
+        dipId = await createDip(basePayload)
       }
+
+      await replaceCoe({ dipendenteId: dipId, entries: coePayload })
+      await replaceSede({ dipendenteId: dipId, entries: sedePayload })
       setModalOpen(false)
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : 'Errore durante il salvataggio')
     } finally {
       setIsSubmitting(false)
     }
@@ -388,6 +416,11 @@ export default function DipendentiList() {
             </div>
           )}
 
+          {saveError && (
+            <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-2 text-sm text-red-700">
+              {saveError}
+            </div>
+          )}
           <div className="flex gap-3 pt-2">
             <button type="button" onClick={() => setModalOpen(false)} className="btn-secondary flex-1" disabled={isSubmitting}>Annulla</button>
             <button type="submit" className="btn-primary flex-1" disabled={isSubmitting}>
