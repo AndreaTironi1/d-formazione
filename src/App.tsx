@@ -1,5 +1,4 @@
-import { SignIn, useUser } from '@clerk/clerk-react'
-import { useConvexAuth } from 'convex/react'
+import { SignIn, useAuth } from '@clerk/clerk-react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import Layout from './components/Layout'
 import Dashboard from './pages/Dashboard'
@@ -12,10 +11,9 @@ import IscrizioniList from './pages/IscrizioniList'
 import ImportExcel from './components/ImportExcel'
 
 function App() {
-  const { isAuthenticated, isLoading } = useConvexAuth()
-  const { isLoaded } = useUser()
+  const { isSignedIn, isLoaded } = useAuth()
 
-  if (isLoading || !isLoaded) {
+  if (!isLoaded) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="flex flex-col items-center gap-4">
@@ -26,7 +24,7 @@ function App() {
     )
   }
 
-  if (!isAuthenticated) {
+  if (!isSignedIn) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="w-full max-w-md">
