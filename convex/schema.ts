@@ -56,6 +56,20 @@ export default defineSchema({
     oreAula: v.optional(v.number()),
     priorita: v.number(),
     coeId: v.optional(v.id("coe")),
+    // Campi scheda corso
+    owner: v.optional(v.string()),
+    tutor: v.optional(v.string()),
+    docenza: v.optional(v.string()),
+    nomeDocenteAula: v.optional(v.string()),
+    nomeDocenteOnboarding: v.optional(v.string()),
+    durataOre: v.optional(v.number()),
+    dataInizio: v.optional(v.string()),
+    dataFine: v.optional(v.string()),
+    modalitaErogazione: v.optional(v.string()),
+    onboardingOre: v.optional(v.number()),
+    competenzaSapere: v.optional(v.string()),
+    competenzaSaperFare: v.optional(v.string()),
+    outputTipici: v.optional(v.string()),
   })
     .index("by_idCorso", ["idCorso"])
     .index("by_ambito", ["ambito"])
