@@ -11,6 +11,7 @@ import IscrizioniList from './pages/IscrizioniList'
 import ImportExcel from './components/ImportExcel'
 import ExportExcel from './pages/ExportExcel'
 import ReportDipendente from './pages/ReportDipendente'
+import Changelog from './pages/Changelog'
 
 function App() {
   const { isSignedIn, isLoaded } = useAuth()
@@ -54,6 +55,7 @@ function App() {
         <Route path="/importa" element={<ImportExcel />} />
         <Route path="/esporta" element={<ExportExcel />} />
         <Route path="/report" element={<ReportDipendente />} />
+        <Route path="/changelog" element={<Changelog />} />
       </Routes>
     </Layout>
   )
