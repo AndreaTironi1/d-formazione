@@ -9,6 +9,8 @@ import ServiziList from './pages/ServiziList'
 import CorsiList from './pages/CorsiList'
 import IscrizioniList from './pages/IscrizioniList'
 import ImportExcel from './components/ImportExcel'
+import ExportExcel from './pages/ExportExcel'
+import ReportDipendente from './pages/ReportDipendente'
 
 function App() {
   const { isSignedIn, isLoaded } = useAuth()
@@ -50,6 +52,8 @@ function App() {
         <Route path="/corsi" element={<CorsiList />} />
         <Route path="/iscrizioni" element={<IscrizioniList />} />
         <Route path="/importa" element={<ImportExcel />} />
+        <Route path="/esporta" element={<ExportExcel />} />
+        <Route path="/report" element={<ReportDipendente />} />
       </Routes>
     </Layout>
   )
