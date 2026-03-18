@@ -145,6 +145,58 @@ export const getCoeAssociations = query({
   },
 });
 
+// Rimpiazza tutte le associazioni CoE di un dipendente in una sola operazione
+export const replaceCoeAssociations = mutation({
+  args: {
+    dipendenteId: v.id("dipendenti"),
+    entries: v.array(v.object({
+      coeId: v.id("coe"),
+      percentuale: v.optional(v.number()),
+    })),
+  },
+  handler: async (ctx, args) => {
+    const existing = await ctx.db
+      .query("dipendenti_coe")
+      .withIndex("by_dipendenteId", (q) => q.eq("dipendenteId", args.dipendenteId))
+      .collect();
+    for (const r of existing) await ctx.db.delete(r._id);
+    for (const e of args.entries) {
+      await ctx.db.insert("dipendenti_coe", {
+        dipendenteId: args.dipendenteId,
+        coeId: e.coeId,
+        percentuale: e.percentuale,
+      });
+    }
+    await ctx.db.patch(args.dipendenteId, { coeId: args.entries[0]?.coeId });
+  },
+});
+
+// Rimpiazza tutte le associazioni Sede di un dipendente in una sola operazione
+export const replaceSedeAssociations = mutation({
+  args: {
+    dipendenteId: v.id("dipendenti"),
+    entries: v.array(v.object({
+      sedeId: v.id("sedi"),
+      percentuale: v.optional(v.number()),
+    })),
+  },
+  handler: async (ctx, args) => {
+    const existing = await ctx.db
+      .query("dipendenti_sedi")
+      .withIndex("by_dipendenteId", (q) => q.eq("dipendenteId", args.dipendenteId))
+      .collect();
+    for (const r of existing) await ctx.db.delete(r._id);
+    for (const e of args.entries) {
+      await ctx.db.insert("dipendenti_sedi", {
+        dipendenteId: args.dipendenteId,
+        sedeId: e.sedeId,
+        percentuale: e.percentuale,
+      });
+    }
+    await ctx.db.patch(args.dipendenteId, { sedeId: args.entries[0]?.sedeId });
+  },
+});
+
 // dipendenti_sedi operations
 export const addSedeAssociation = mutation({
   args: {
