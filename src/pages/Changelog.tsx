@@ -10,6 +10,28 @@ interface Release {
 
 const releases: Release[] = [
   {
+    version: '0.3.9',
+    date: '2026-03-18',
+    changes: [
+      {
+        title: 'Menu rinominati: Anagrafiche → Dati, Dati → Utilità',
+        description:
+          'Le sezioni del menu laterale sono state rinominate per riflettere meglio il loro contenuto: la sezione con CoE, Sedi, Dipendenti ecc. si chiama ora "Dati", mentre la sezione con Importa ed Esporta si chiama "Utilità".',
+      },
+    ],
+  },
+  {
+    version: '0.3.8',
+    date: '2026-03-18',
+    changes: [
+      {
+        title: 'Pagina Changelog',
+        description:
+          'Cliccando sul numero di versione in fondo al menu laterale si accede a questa pagina, che racconta tutte le novità dell\'applicazione in linguaggio semplice.',
+      },
+    ],
+  },
+  {
     version: '0.3.7',
     date: '2026-03-18',
     changes: [
