@@ -10,6 +10,17 @@ interface Release {
 
 const releases: Release[] = [
   {
+    version: '0.4.2',
+    date: '2026-03-20',
+    changes: [
+      {
+        title: 'Report Mensile: visibili solo i dipendenti con corsi nel mese',
+        description:
+          'Nel Report Mensile, la griglia ora mostra solo i dipendenti che hanno almeno un corso attivo nel mese e nell\'anno selezionati. In precedenza comparivano tutti i dipendenti, rendendo la lista difficile da leggere. Chi non ha corsi in quel periodo semplicemente non appare.',
+      },
+    ],
+  },
+  {
     version: '0.4.1',
     date: '2026-03-20',
     changes: [
