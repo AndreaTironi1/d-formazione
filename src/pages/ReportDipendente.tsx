@@ -255,6 +255,7 @@ function DipCard({
   year: number
 }) {
   const myIscrizioni = iscrizioni.filter((i) => i.dipendenteId === dip._id)
+  const totalOre = myIscrizioni.reduce((sum, i) => sum + (i.corso?.oreAula ?? i.corso?.durataOre ?? 0), 0)
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-4">
@@ -282,6 +283,18 @@ function DipCard({
             <span className="text-xs text-slate-400 w-8">Sede</span>
             <SedeBadges dip={dip} />
           </div>
+        </div>
+      </div>
+
+      {/* Statistiche */}
+      <div className="flex gap-4">
+        <div className="bg-slate-50 rounded-lg px-4 py-2 text-center">
+          <p className="text-lg font-bold text-slate-900">{myIscrizioni.length}</p>
+          <p className="text-xs text-slate-500">Corsi</p>
+        </div>
+        <div className="bg-slate-50 rounded-lg px-4 py-2 text-center">
+          <p className="text-lg font-bold text-slate-900">{totalOre}</p>
+          <p className="text-xs text-slate-500">Ore totali</p>
         </div>
       </div>
 

@@ -10,6 +10,17 @@ interface Release {
 
 const releases: Release[] = [
   {
+    version: '0.4.3',
+    date: '2026-03-20',
+    changes: [
+      {
+        title: 'Report Dipendenti: totale corsi e ore per ogni persona',
+        description:
+          'Nella scheda di ogni dipendente nel Report Dipendenti compaiono ora due contatori: il numero totale di corsi a cui è iscritto e il totale delle ore di formazione previste. I valori tengono conto di tutti i corsi indipendentemente dall\'anno visualizzato nel Gantt.',
+      },
+    ],
+  },
+  {
     version: '0.4.2',
     date: '2026-03-20',
     changes: [
