@@ -269,7 +269,9 @@ export default function ReportMensile() {
   }, [year, month])
 
   const filteredDipendenti = useMemo(() => {
-    if (!dipendenti) return []
+    if (!dipendenti || !iscrizioni) return []
+    const monthStart = new Date(year, month - 1, 1)
+    const monthEnd = new Date(year, month, 0, 23, 59, 59, 999)
     return dipendenti.filter(d => {
       if (filterCoe) {
         const inPrimary = String(d.coeId) === filterCoe
@@ -281,9 +283,15 @@ export default function ReportMensile() {
         const inMultipli = d.sediMultiple?.some(ds => String(ds.sedeId) === filterSede)
         if (!inPrimary && !inMultipli) return false
       }
-      return true
+      return iscrizioni.some(i => {
+        if (String(i.dipendenteId) !== String(d._id)) return false
+        if (!i.corso?.dataInizio || !i.corso?.dataFine) return false
+        const start = new Date(i.corso.dataInizio)
+        const end = new Date(i.corso.dataFine)
+        return start <= monthEnd && end >= monthStart
+      })
     })
-  }, [dipendenti, filterCoe, filterSede])
+  }, [dipendenti, iscrizioni, filterCoe, filterSede, year, month])
 
   const isLoading = dipendenti === undefined || iscrizioni === undefined
 
