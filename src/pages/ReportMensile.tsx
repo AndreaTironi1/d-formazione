@@ -114,18 +114,24 @@ function GridCell({
 
   const first = corsi[0]
   const bg = PRIORITY_CELL_BG[first.priorita] ?? 'bg-slate-300'
+  const label = corsi.length > 1
+    ? `${first.idCorso ?? first.titolo.slice(0, 6)} +${corsi.length - 1}`
+    : (first.idCorso ?? first.titolo.slice(0, 8))
 
   return (
     <td
-      className={`border border-white w-7 min-w-[1.75rem] cursor-pointer hover:opacity-75 transition-opacity ${bg}`}
+      className={`border border-white w-8 min-w-[2rem] cursor-pointer hover:opacity-75 transition-opacity ${bg}`}
       onClick={() => onClick(first)}
-      title={corsi.map(c => c.titolo).join(' / ')}
+      title={corsi.map(c => `${c.idCorso ? `[${c.idCorso}] ` : ''}${c.titolo}`).join(' / ')}
     >
-      {corsi.length > 1 && (
-        <div className="flex items-center justify-center h-full">
-          <span className="text-[9px] font-bold text-white leading-none">+{corsi.length}</span>
-        </div>
-      )}
+      <div
+        className="flex items-center justify-center py-1"
+        style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}
+      >
+        <span className="text-[10px] font-semibold text-white leading-none tracking-tight whitespace-nowrap">
+          {label}
+        </span>
+      </div>
     </td>
   )
 }
