@@ -40,6 +40,7 @@ type Iscrizione = {
     dataInizio?: string
     dataFine?: string
     oreAula?: number
+    durataOre?: number
     priorita: number
   } | null
 }
