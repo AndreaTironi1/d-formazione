@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react'
 import { useQuery, useMutation } from 'convex/react'
 import { api } from '../../convex/_generated/api'
 import { Id } from '../../convex/_generated/dataModel'
-import { Plus, Pencil, Trash2, Search } from 'lucide-react'
+import { Plus, Trash2, Search, Check } from 'lucide-react'
 import Modal from '../components/Modal'
 import ConfirmDialog from '../components/ConfirmDialog'
 
@@ -27,7 +27,7 @@ export default function IscrizioniList() {
   const iscrizioni = useQuery(api.iscrizioni.getAllWithRelations) as IscrizioneRow[] | undefined
   const dipendenti = useQuery(api.dipendenti.getAll)
   const corsi = useQuery(api.corsi.getAll)
-  const createIscrizione = useMutation(api.iscrizioni.create)
+  const createBulkIscrizioni = useMutation(api.iscrizioni.createBulk)
   const removeIscrizione = useMutation(api.iscrizioni.remove)
 
   const [modalOpen, setModalOpen] = useState(false)
@@ -38,25 +38,45 @@ export default function IscrizioniList() {
   const [filterCorso, setFilterCorso] = useState('')
   const [search, setSearch] = useState('')
 
-  const [formData, setFormData] = useState({
-    dipendenteId: '',
-    corsoId: '',
-  })
+  const [formCorsoId, setFormCorsoId] = useState('')
+  const [formDipendenteIds, setFormDipendenteIds] = useState<string[]>([])
+  const [formSearch, setFormSearch] = useState('')
+
+  const toggleDipendente = (id: string) => {
+    setFormDipendenteIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    )
+  }
+
+  const filteredDipendentiForm = useMemo(() => {
+    if (!formSearch.trim()) return dipendenti ?? []
+    const q = formSearch.toLowerCase()
+    return (dipendenti ?? []).filter((d) => d.nome.toLowerCase().includes(q))
+  }, [dipendenti, formSearch])
+
+  const handleOpenModal = () => {
+    setFormCorsoId('')
+    setFormDipendenteIds([])
+    setFormSearch('')
+    setModalOpen(true)
+  }
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!formData.dipendenteId || !formData.corsoId) return
+    if (!formCorsoId || formDipendenteIds.length === 0) return
 
     setIsSubmitting(true)
     try {
-      await createIscrizione({
-        dipendenteId: formData.dipendenteId as Id<'dipendenti'>,
-        corsoId: formData.corsoId as Id<'corsi'>,
+      const result = await createBulkIscrizioni({
+        corsoId: formCorsoId as Id<'corsi'>,
+        dipendenteIds: formDipendenteIds as Id<'dipendenti'>[],
       })
       setModalOpen(false)
-      setFormData({ dipendenteId: '', corsoId: '' })
+      if (result.skipped > 0) {
+        alert(`${result.created} iscrizioni create. ${result.skipped} già esistenti e ignorate.`)
+      }
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Errore durante la creazione dell\'iscrizione.')
+      alert(err instanceof Error ? err.message : 'Errore durante la creazione delle iscrizioni.')
     } finally {
       setIsSubmitting(false)
     }
@@ -102,7 +122,7 @@ export default function IscrizioniList() {
             {iscrizioni?.length ?? '...'} iscrizioni totali
           </p>
         </div>
-        <button onClick={() => setModalOpen(true)} className="btn-primary">
+        <button onClick={handleOpenModal} className="btn-primary">
           <Plus className="w-4 h-4" />
           Nuova Iscrizione
         </button>
@@ -239,34 +259,17 @@ export default function IscrizioniList() {
         open={modalOpen}
         onClose={() => setModalOpen(false)}
         title="Nuova Iscrizione"
-        size="sm"
+        size="md"
       >
         <form onSubmit={handleCreate} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              Dipendente <span className="text-red-500">*</span>
-            </label>
-            <select
-              className="input-field"
-              value={formData.dipendenteId}
-              onChange={(e) => setFormData((f) => ({ ...f, dipendenteId: e.target.value }))}
-              required
-            >
-              <option value="">— Seleziona dipendente —</option>
-              {dipendenti?.map((d) => (
-                <option key={d._id} value={d._id}>{d.nome}</option>
-              ))}
-            </select>
-          </div>
-
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">
               Corso <span className="text-red-500">*</span>
             </label>
             <select
               className="input-field"
-              value={formData.corsoId}
-              onChange={(e) => setFormData((f) => ({ ...f, corsoId: e.target.value }))}
+              value={formCorsoId}
+              onChange={(e) => setFormCorsoId(e.target.value)}
               required
             >
               <option value="">— Seleziona corso —</option>
@@ -278,6 +281,58 @@ export default function IscrizioniList() {
             </select>
           </div>
 
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              Dipendenti <span className="text-red-500">*</span>
+              {formDipendenteIds.length > 0 && (
+                <span className="ml-2 text-blue-600 font-semibold">({formDipendenteIds.length} selezionati)</span>
+              )}
+            </label>
+            <div className="relative mb-2">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Cerca dipendente..."
+                value={formSearch}
+                onChange={(e) => setFormSearch(e.target.value)}
+                className="input-field pl-9"
+              />
+            </div>
+            <div className="border border-slate-200 rounded-lg overflow-y-auto max-h-52">
+              {filteredDipendentiForm.length === 0 ? (
+                <p className="px-3 py-4 text-center text-slate-400 text-sm">Nessun dipendente trovato.</p>
+              ) : (
+                filteredDipendentiForm.map((d) => {
+                  const selected = formDipendenteIds.includes(d._id)
+                  return (
+                    <div
+                      key={d._id}
+                      onClick={() => toggleDipendente(d._id)}
+                      className={`flex items-center gap-3 px-3 py-2.5 cursor-pointer border-b border-slate-100 last:border-0 hover:bg-slate-50 transition-colors ${selected ? 'bg-blue-50' : ''}`}
+                    >
+                      <div className={`w-4 h-4 rounded flex items-center justify-center border ${selected ? 'bg-blue-600 border-blue-600' : 'border-slate-300'}`}>
+                        {selected && <Check className="w-3 h-3 text-white" />}
+                      </div>
+                      <span className="text-sm text-slate-800">{d.nome}</span>
+                      {d.seniority && (
+                        <span className="ml-auto text-xs text-slate-400">{d.seniority}</span>
+                      )}
+                    </div>
+                  )
+                })
+              )}
+            </div>
+            {formDipendenteIds.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setFormDipendenteIds([])}
+                className="mt-1 text-xs text-slate-500 hover:text-red-500"
+              >
+                Deseleziona tutti
+              </button>
+            )}
+          </div>
+
           <div className="flex gap-3 pt-2">
             <button
               type="button"
@@ -287,8 +342,16 @@ export default function IscrizioniList() {
             >
               Annulla
             </button>
-            <button type="submit" className="btn-primary flex-1" disabled={isSubmitting}>
-              {isSubmitting ? 'Creazione...' : 'Crea Iscrizione'}
+            <button
+              type="submit"
+              className="btn-primary flex-1"
+              disabled={isSubmitting || !formCorsoId || formDipendenteIds.length === 0}
+            >
+              {isSubmitting
+                ? 'Creazione...'
+                : formDipendenteIds.length > 1
+                  ? `Crea ${formDipendenteIds.length} Iscrizioni`
+                  : 'Crea Iscrizione'}
             </button>
           </div>
         </form>

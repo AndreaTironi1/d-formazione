@@ -70,6 +70,31 @@ export const create = mutation({
   },
 });
 
+export const createBulk = mutation({
+  args: {
+    corsoId: v.id("corsi"),
+    dipendenteIds: v.array(v.id("dipendenti")),
+  },
+  handler: async (ctx, args) => {
+    const results = { created: 0, skipped: 0 }
+    for (const dipendenteId of args.dipendenteIds) {
+      const existing = await ctx.db
+        .query("iscrizioni")
+        .withIndex("by_dipendente_corso", (q) =>
+          q.eq("dipendenteId", dipendenteId).eq("corsoId", args.corsoId)
+        )
+        .first();
+      if (existing) {
+        results.skipped++
+      } else {
+        await ctx.db.insert("iscrizioni", { dipendenteId, corsoId: args.corsoId });
+        results.created++
+      }
+    }
+    return results
+  },
+});
+
 export const update = mutation({
   args: {
     id: v.id("iscrizioni"),

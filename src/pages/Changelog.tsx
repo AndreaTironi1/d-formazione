@@ -10,6 +10,17 @@ interface Release {
 
 const releases: Release[] = [
   {
+    version: '0.4.0',
+    date: '2026-03-20',
+    changes: [
+      {
+        title: 'Iscrizione di più persone a un corso in un solo passaggio',
+        description:
+          'Nella pagina Iscrizioni, il modulo "Nuova Iscrizione" ora permette di selezionare un corso e poi spuntare più dipendenti dalla lista. Con un solo clic vengono create tutte le iscrizioni. Se qualcuno era già iscritto al corso, viene ignorato automaticamente senza errori, e a fine operazione compare un riepilogo di quante iscrizioni sono state create e quante erano già presenti.',
+      },
+    ],
+  },
+  {
     version: '0.3.9',
     date: '2026-03-18',
     changes: [
