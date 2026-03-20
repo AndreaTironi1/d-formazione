@@ -11,6 +11,7 @@ import IscrizioniList from './pages/IscrizioniList'
 import ImportExcel from './components/ImportExcel'
 import ExportExcel from './pages/ExportExcel'
 import ReportDipendente from './pages/ReportDipendente'
+import ReportMensile from './pages/ReportMensile'
 import Changelog from './pages/Changelog'
 
 function App() {
@@ -55,6 +56,7 @@ function App() {
         <Route path="/importa" element={<ImportExcel />} />
         <Route path="/esporta" element={<ExportExcel />} />
         <Route path="/report" element={<ReportDipendente />} />
+        <Route path="/report-mensile" element={<ReportMensile />} />
         <Route path="/changelog" element={<Changelog />} />
       </Routes>
     </Layout>

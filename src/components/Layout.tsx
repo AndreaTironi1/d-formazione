@@ -12,6 +12,7 @@ import {
   Upload,
   Download,
   BarChart2,
+  CalendarDays,
   ChevronDown,
 } from 'lucide-react'
 import { cn } from '../lib/utils'
@@ -27,6 +28,7 @@ const navSections: NavSection[] = [
     items: [
       { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
       { to: '/report', label: 'Report Dipendenti', icon: BarChart2 },
+      { to: '/report-mensile', label: 'Report Mensile', icon: CalendarDays },
     ],
   },
   {
@@ -117,7 +119,7 @@ export default function Layout({ children }: LayoutProps) {
                 `text-xs font-mono transition-colors ${isActive ? 'text-blue-600' : 'text-slate-400 hover:text-slate-700'}`
               }
             >
-              v0.4.0
+              v0.4.1
             </NavLink>
             <span className="text-xs text-slate-400">2026-03-20</span>
           </div>

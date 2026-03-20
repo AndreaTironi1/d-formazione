@@ -10,6 +10,17 @@ interface Release {
 
 const releases: Release[] = [
   {
+    version: '0.4.1',
+    date: '2026-03-20',
+    changes: [
+      {
+        title: 'Report Mensile',
+        description:
+          'Nuova pagina di report raggiungibile dal menu sotto "Report Dipendenti". Mostra una griglia con i dipendenti sulle righe e i giorni del mese sulle colonne: ogni cella colorata indica un corso attivo in quel giorno per quel dipendente. Il colore segue la priorità del corso. Cliccando su una cella si aprono i dettagli completi del corso. In alto si può scegliere mese e anno (di default il mese corrente), e filtrare per CoE e/o Sede per ridurre i dipendenti visualizzati.',
+      },
+    ],
+  },
+  {
     version: '0.4.0',
     date: '2026-03-20',
     changes: [
