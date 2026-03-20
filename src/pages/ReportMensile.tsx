@@ -104,9 +104,11 @@ function getCorsiOnDay(
 function GridCell({
   corsi,
   onClick,
+  showLabels,
 }: {
   corsi: CorsoInfo[]
   onClick: (c: CorsoInfo) => void
+  showLabels: boolean
 }) {
   if (corsi.length === 0) {
     return <td className="border border-slate-100 w-7 min-w-[1.75rem]" />
@@ -124,14 +126,16 @@ function GridCell({
       onClick={() => onClick(first)}
       title={corsi.map(c => `${c.idCorso ? `[${c.idCorso}] ` : ''}${c.titolo}`).join(' / ')}
     >
-      <div
-        className="flex items-center justify-center py-1"
-        style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}
-      >
-        <span className="text-[10px] font-semibold text-white leading-none tracking-tight whitespace-nowrap">
-          {label}
-        </span>
-      </div>
+      {showLabels && (
+        <div
+          className="flex items-center justify-center py-1"
+          style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}
+        >
+          <span className="text-[10px] font-semibold text-white leading-none tracking-tight whitespace-nowrap">
+            {label}
+          </span>
+        </div>
+      )}
     </td>
   )
 }
@@ -267,6 +271,7 @@ export default function ReportMensile() {
   const [year, setYear] = useState(defaultYear)
   const [filterCoe, setFilterCoe] = useState('')
   const [filterSede, setFilterSede] = useState('')
+  const [showLabels, setShowLabels] = useState(true)
   const [selectedCorso, setSelectedCorso] = useState<CorsoInfo | null>(null)
 
   const days = useMemo(() => {
@@ -362,6 +367,18 @@ export default function ReportMensile() {
             </select>
           </div>
         </div>
+
+        <div className="mt-3 pt-3 border-t border-slate-100">
+          <label className="flex items-center gap-2 cursor-pointer w-fit">
+            <input
+              type="checkbox"
+              checked={showLabels}
+              onChange={e => setShowLabels(e.target.checked)}
+              className="w-4 h-4 rounded accent-blue-600"
+            />
+            <span className="text-sm text-slate-600">Mostra codice corso nelle celle</span>
+          </label>
+        </div>
       </div>
 
       {/* Grid */}
@@ -405,7 +422,7 @@ export default function ReportMensile() {
                     </td>
                     {days.map(d => {
                       const corsi = getCorsiOnDay(String(dip._id), d, year, month, iscrizioni ?? [])
-                      return <GridCell key={d} corsi={corsi} onClick={setSelectedCorso} />
+                      return <GridCell key={d} corsi={corsi} onClick={setSelectedCorso} showLabels={showLabels} />
                     })}
                   </tr>
                 ))}
