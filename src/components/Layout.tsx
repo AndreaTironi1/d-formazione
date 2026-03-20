@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
-import { UserButton } from '@clerk/clerk-react'
+import { UserButton, useUser } from '@clerk/clerk-react'
 import {
   LayoutDashboard,
   Building2,
@@ -99,6 +99,9 @@ function NavSection({ section }: { section: NavSection }) {
 }
 
 export default function Layout({ children }: LayoutProps) {
+  const { user } = useUser()
+  const displayName = user ? `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim() || user.primaryEmailAddress?.emailAddress : 'Account'
+
   return (
     <div className="flex h-screen bg-slate-50">
       <aside className="w-64 bg-white border-r border-slate-200 flex flex-col shadow-sm flex-shrink-0">
@@ -125,7 +128,7 @@ export default function Layout({ children }: LayoutProps) {
           </div>
           <div className="flex items-center gap-3">
             <UserButton afterSignOutUrl="/" />
-            <span className="text-sm text-slate-600 truncate">Account</span>
+            <span className="text-sm text-slate-600 truncate">{displayName}</span>
           </div>
         </div>
       </aside>
