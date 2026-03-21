@@ -10,6 +10,27 @@ interface Release {
 
 const releases: Release[] = [
   {
+    version: '0.4.4',
+    date: '2026-03-21',
+    changes: [
+      {
+        title: 'Report Dipendenti: date di inizio e fine corso',
+        description:
+          'Nella riga di ogni corso del Report Dipendenti, accanto alle ore compare ora anche il periodo del corso nel formato "gg/mm → gg/mm", così si vede subito quando si svolge.',
+      },
+      {
+        title: 'Report Dipendenti: esporta scheda in PDF',
+        description:
+          'Ogni scheda dipendente ha ora un pulsante "Scarica PDF" che genera un file PDF con tutte le informazioni della scheda, inclusa la timeline Gantt. In fondo al PDF compare la data e ora di esportazione.',
+      },
+      {
+        title: 'Report Mensile: esporta la tabella in PDF',
+        description:
+          'In cima al Report Mensile compare il pulsante "Scarica PDF". Il PDF generato riporta in testa mese, anno, CoE e Sede selezionati, quindi la tabella completa con dipendenti e giorni, e in fondo la data e ora di esportazione.',
+      },
+    ],
+  },
+  {
     version: '0.4.3',
     date: '2026-03-20',
     changes: [

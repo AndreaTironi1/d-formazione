@@ -1,8 +1,9 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef } from 'react'
 import { useQuery } from 'convex/react'
 import { api } from '../../convex/_generated/api'
 import { Id } from '../../convex/_generated/dataModel'
 import Modal from '../components/Modal'
+import { exportToPdf } from '../utils/exportPdf'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -273,6 +274,27 @@ export default function ReportMensile() {
   const [filterSede, setFilterSede] = useState('')
   const [showLabels, setShowLabels] = useState(true)
   const [selectedCorso, setSelectedCorso] = useState<CorsoInfo | null>(null)
+  const [exporting, setExporting] = useState(false)
+  const tableRef = useRef<HTMLTableElement>(null)
+
+  const handleExportPdf = async () => {
+    if (!tableRef.current) return
+    setExporting(true)
+    try {
+      const coeLabel = filterCoe ? (coeList?.find(c => c._id === filterCoe)?.nome ?? '') : 'Tutti i CoE'
+      const sedeLabel = filterSede ? (sediList?.find(s => s._id === filterSede)?.areaGeografica ?? '') : 'Tutte le Sedi'
+      await exportToPdf(tableRef.current, {
+        filename: `report-mensile-${MONTH_NAMES[month - 1].toLowerCase()}-${year}.pdf`,
+        orientation: 'landscape',
+        title: `Report Mensile — ${MONTH_NAMES[month - 1]} ${year}`,
+        headerLines: [
+          `CoE: ${coeLabel}     Sede: ${sedeLabel}`,
+        ],
+      })
+    } finally {
+      setExporting(false)
+    }
+  }
 
   const days = useMemo(() => {
     const n = daysInMonth(year, month)
@@ -309,11 +331,20 @@ export default function ReportMensile() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-slate-900">Report Mensile</h1>
-        <p className="text-slate-500 text-sm mt-1">
-          Visualizza i corsi per dipendente giorno per giorno.
-        </p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">Report Mensile</h1>
+          <p className="text-slate-500 text-sm mt-1">
+            Visualizza i corsi per dipendente giorno per giorno.
+          </p>
+        </div>
+        <button
+          onClick={handleExportPdf}
+          disabled={exporting || isLoading || filteredDipendenti.length === 0}
+          className="shrink-0 text-sm text-slate-500 hover:text-blue-600 border border-slate-200 hover:border-blue-300 rounded-lg px-3 py-2 transition-colors disabled:opacity-40"
+        >
+          {exporting ? 'Esportazione…' : 'Scarica PDF'}
+        </button>
       </div>
 
       {/* Filters */}
@@ -395,7 +426,7 @@ export default function ReportMensile() {
       ) : (
         <div className="card overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="text-xs border-collapse">
+            <table ref={tableRef} className="text-xs border-collapse">
               <thead>
                 <tr className="bg-slate-50">
                   <th className="sticky left-0 z-10 bg-slate-50 border border-slate-200 px-3 py-2 text-left font-semibold text-slate-600 min-w-[200px] whitespace-nowrap">

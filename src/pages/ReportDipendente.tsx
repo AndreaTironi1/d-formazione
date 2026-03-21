@@ -1,8 +1,9 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef } from 'react'
 import { useQuery } from 'convex/react'
 import { api } from '../../convex/_generated/api'
 import { Id } from '../../convex/_generated/dataModel'
 import { cn } from '../lib/utils'
+import { exportToPdf } from '../utils/exportPdf'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -68,6 +69,11 @@ const PRIORITY_LABEL: Record<number, string> = {
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
+
+function formatDateShort(iso: string): string {
+  const [, m, d] = iso.split('-')
+  return `${d}/${m}`
+}
 
 function isLeapYear(y: number): boolean {
   return (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0
@@ -214,12 +220,15 @@ function GanttRow({
         )}
       </div>
 
-      {/* Ore */}
-      {corso.oreAula != null && (
-        <span className="shrink-0 text-xs text-slate-400 w-12 text-right">
-          {corso.oreAula}h
-        </span>
-      )}
+      {/* Ore + range date */}
+      <div className="shrink-0 text-xs text-slate-400 w-28 text-right space-y-0.5">
+        {corso.oreAula != null && <div>{corso.oreAula}h</div>}
+        {corso.dataInizio && corso.dataFine && (
+          <div className="text-[10px]">
+            {formatDateShort(corso.dataInizio)} → {formatDateShort(corso.dataFine)}
+          </div>
+        )}
+      </div>
     </div>
   )
 }
@@ -255,11 +264,26 @@ function DipCard({
   iscrizioni: Iscrizione[]
   year: number
 }) {
+  const cardRef = useRef<HTMLDivElement>(null)
+  const [exporting, setExporting] = useState(false)
   const myIscrizioni = iscrizioni.filter((i) => i.dipendenteId === dip._id)
   const totalOre = myIscrizioni.reduce((sum, i) => sum + (i.corso?.oreAula ?? i.corso?.durataOre ?? 0), 0)
 
+  const handleExportPdf = async () => {
+    if (!cardRef.current) return
+    setExporting(true)
+    try {
+      await exportToPdf(cardRef.current, {
+        filename: `scheda-${dip.nome.toLowerCase().replace(/\s+/g, '-')}.pdf`,
+        orientation: 'landscape',
+      })
+    } finally {
+      setExporting(false)
+    }
+  }
+
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-4">
+    <div ref={cardRef} className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-4">
       {/* Header dipendente */}
       <div className="flex flex-col sm:flex-row sm:items-start gap-3">
         <div className="flex-1 min-w-0">
@@ -284,6 +308,13 @@ function DipCard({
             <span className="text-xs text-slate-400 w-8">Sede</span>
             <SedeBadges dip={dip} />
           </div>
+          <button
+            onClick={handleExportPdf}
+            disabled={exporting}
+            className="mt-1 text-xs text-slate-500 hover:text-blue-600 border border-slate-200 hover:border-blue-300 rounded-lg px-2 py-1 transition-colors disabled:opacity-50"
+          >
+            {exporting ? 'Esportazione…' : 'Scarica PDF'}
+          </button>
         </div>
       </div>
 
