@@ -76,21 +76,60 @@ export const createBulk = mutation({
     dipendenteIds: v.array(v.id("dipendenti")),
   },
   handler: async (ctx, args) => {
-    const results = { created: 0, skipped: 0 }
+    const results: {
+      created: string[]
+      skippedDuplicate: string[]
+      skippedConflict: { name: string; conflictingCourse: string }[]
+    } = { created: [], skippedDuplicate: [], skippedConflict: [] }
+
+    const newCorso = await ctx.db.get(args.corsoId)
+    const newStart = newCorso?.dataInizio ?? null
+    const newEnd = newCorso?.dataFine ?? null
+
     for (const dipendenteId of args.dipendenteIds) {
+      const dipendente = await ctx.db.get(dipendenteId)
+      const name = dipendente?.nome ?? String(dipendenteId)
+
+      // Check duplicate
       const existing = await ctx.db
         .query("iscrizioni")
         .withIndex("by_dipendente_corso", (q) =>
           q.eq("dipendenteId", dipendenteId).eq("corsoId", args.corsoId)
         )
-        .first();
+        .first()
       if (existing) {
-        results.skipped++
-      } else {
-        await ctx.db.insert("iscrizioni", { dipendenteId, corsoId: args.corsoId });
-        results.created++
+        results.skippedDuplicate.push(name)
+        continue
       }
+
+      // Check date conflicts (only if new corso has dates)
+      if (newStart && newEnd) {
+        const existingIscrizioni = await ctx.db
+          .query("iscrizioni")
+          .withIndex("by_dipendenteId", (q) => q.eq("dipendenteId", dipendenteId))
+          .collect()
+
+        let conflict: string | null = null
+        for (const isc of existingIscrizioni) {
+          const corso = await ctx.db.get(isc.corsoId)
+          if (!corso?.dataInizio || !corso?.dataFine) continue
+          const overlaps = corso.dataInizio <= newEnd && corso.dataFine >= newStart
+          if (overlaps) {
+            conflict = corso.titolo
+            break
+          }
+        }
+
+        if (conflict) {
+          results.skippedConflict.push({ name, conflictingCourse: conflict })
+          continue
+        }
+      }
+
+      await ctx.db.insert("iscrizioni", { dipendenteId, corsoId: args.corsoId })
+      results.created.push(name)
     }
+
     return results
   },
 });

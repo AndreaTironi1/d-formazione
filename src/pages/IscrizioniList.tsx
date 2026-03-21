@@ -2,9 +2,15 @@ import { useState, useMemo } from 'react'
 import { useQuery, useMutation } from 'convex/react'
 import { api } from '../../convex/_generated/api'
 import { Id } from '../../convex/_generated/dataModel'
-import { Plus, Trash2, Search, Check } from 'lucide-react'
+import { Plus, Trash2, Search, Check, CheckCircle, XCircle, AlertCircle } from 'lucide-react'
 import Modal from '../components/Modal'
 import ConfirmDialog from '../components/ConfirmDialog'
+
+type BulkResult = {
+  created: string[]
+  skippedDuplicate: string[]
+  skippedConflict: { name: string; conflictingCourse: string }[]
+}
 
 type IscrizioneRow = {
   _id: Id<'iscrizioni'>
@@ -33,6 +39,7 @@ export default function IscrizioniList() {
   const [modalOpen, setModalOpen] = useState(false)
   const [deleteItem, setDeleteItem] = useState<IscrizioneRow | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [bulkResult, setBulkResult] = useState<{ result: BulkResult; corsoTitolo: string } | null>(null)
 
   const [filterDipendente, setFilterDipendente] = useState('')
   const [filterCorso, setFilterCorso] = useState('')
@@ -71,10 +78,9 @@ export default function IscrizioniList() {
         corsoId: formCorsoId as Id<'corsi'>,
         dipendenteIds: formDipendenteIds as Id<'dipendenti'>[],
       })
+      const corsoTitolo = corsi?.find(c => c._id === formCorsoId)?.titolo ?? formCorsoId
       setModalOpen(false)
-      if (result.skipped > 0) {
-        alert(`${result.created} iscrizioni create. ${result.skipped} già esistenti e ignorate.`)
-      }
+      setBulkResult({ result, corsoTitolo })
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Errore durante la creazione delle iscrizioni.')
     } finally {
@@ -365,6 +371,72 @@ export default function IscrizioniList() {
         confirmLabel="Rimuovi"
         isLoading={isSubmitting}
       />
+
+      {/* Bulk result modal */}
+      <Modal
+        open={!!bulkResult}
+        onClose={() => setBulkResult(null)}
+        title="Riepilogo iscrizioni"
+        size="md"
+      >
+        {bulkResult && (
+          <div className="space-y-4">
+            <p className="text-sm text-slate-500">
+              Corso: <span className="font-semibold text-slate-800">{bulkResult.corsoTitolo}</span>
+            </p>
+
+            {bulkResult.result.created.length > 0 && (
+              <div className="space-y-1">
+                <div className="flex items-center gap-2 text-green-700 font-semibold text-sm">
+                  <CheckCircle className="w-4 h-4" />
+                  Iscritti con successo ({bulkResult.result.created.length})
+                </div>
+                <ul className="ml-6 space-y-0.5">
+                  {bulkResult.result.created.map(name => (
+                    <li key={name} className="text-sm text-slate-700">{name}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {bulkResult.result.skippedConflict.length > 0 && (
+              <div className="space-y-1">
+                <div className="flex items-center gap-2 text-red-600 font-semibold text-sm">
+                  <XCircle className="w-4 h-4" />
+                  Non iscritti — conflitto date ({bulkResult.result.skippedConflict.length})
+                </div>
+                <ul className="ml-6 space-y-0.5">
+                  {bulkResult.result.skippedConflict.map(({ name, conflictingCourse }) => (
+                    <li key={name} className="text-sm text-slate-700">
+                      {name} <span className="text-slate-400">— già in "{conflictingCourse}"</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {bulkResult.result.skippedDuplicate.length > 0 && (
+              <div className="space-y-1">
+                <div className="flex items-center gap-2 text-yellow-600 font-semibold text-sm">
+                  <AlertCircle className="w-4 h-4" />
+                  Già iscritti (ignorati) ({bulkResult.result.skippedDuplicate.length})
+                </div>
+                <ul className="ml-6 space-y-0.5">
+                  {bulkResult.result.skippedDuplicate.map(name => (
+                    <li key={name} className="text-sm text-slate-700">{name}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            <div className="pt-2">
+              <button onClick={() => setBulkResult(null)} className="btn-primary w-full">
+                Chiudi
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   )
 }
