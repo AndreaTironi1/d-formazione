@@ -3,7 +3,7 @@ import { useQuery } from 'convex/react'
 import { api } from '../../convex/_generated/api'
 import { Id } from '../../convex/_generated/dataModel'
 import { cn } from '../lib/utils'
-import { exportToPdf } from '../utils/exportPdf'
+import { printElement } from '../utils/exportPdf'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -265,21 +265,12 @@ function DipCard({
   year: number
 }) {
   const cardRef = useRef<HTMLDivElement>(null)
-  const [exporting, setExporting] = useState(false)
   const myIscrizioni = iscrizioni.filter((i) => i.dipendenteId === dip._id)
   const totalOre = myIscrizioni.reduce((sum, i) => sum + (i.corso?.oreAula ?? i.corso?.durataOre ?? 0), 0)
 
-  const handleExportPdf = async () => {
+  const handleExportPdf = () => {
     if (!cardRef.current) return
-    setExporting(true)
-    try {
-      await exportToPdf(cardRef.current, {
-        filename: `scheda-${dip.nome.toLowerCase().replace(/\s+/g, '-')}.pdf`,
-        orientation: 'landscape',
-      })
-    } finally {
-      setExporting(false)
-    }
+    printElement(cardRef.current, { orientation: 'landscape' })
   }
 
   return (
@@ -310,10 +301,9 @@ function DipCard({
           </div>
           <button
             onClick={handleExportPdf}
-            disabled={exporting}
-            className="mt-1 text-xs text-slate-500 hover:text-blue-600 border border-slate-200 hover:border-blue-300 rounded-lg px-2 py-1 transition-colors disabled:opacity-50"
+            className="mt-1 text-xs text-slate-500 hover:text-blue-600 border border-slate-200 hover:border-blue-300 rounded-lg px-2 py-1 transition-colors"
           >
-            {exporting ? 'Esportazione…' : 'Scarica PDF'}
+            Stampa / Salva PDF
           </button>
         </div>
       </div>

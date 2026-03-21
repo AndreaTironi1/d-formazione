@@ -3,7 +3,7 @@ import { useQuery } from 'convex/react'
 import { api } from '../../convex/_generated/api'
 import { Id } from '../../convex/_generated/dataModel'
 import Modal from '../components/Modal'
-import { exportToPdf } from '../utils/exportPdf'
+import { printElement } from '../utils/exportPdf'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -274,26 +274,17 @@ export default function ReportMensile() {
   const [filterSede, setFilterSede] = useState('')
   const [showLabels, setShowLabels] = useState(true)
   const [selectedCorso, setSelectedCorso] = useState<CorsoInfo | null>(null)
-  const [exporting, setExporting] = useState(false)
   const tableRef = useRef<HTMLTableElement>(null)
 
-  const handleExportPdf = async () => {
+  const handleExportPdf = () => {
     if (!tableRef.current) return
-    setExporting(true)
-    try {
-      const coeLabel = filterCoe ? (coeList?.find(c => c._id === filterCoe)?.nome ?? '') : 'Tutti i CoE'
-      const sedeLabel = filterSede ? (sediList?.find(s => s._id === filterSede)?.areaGeografica ?? '') : 'Tutte le Sedi'
-      await exportToPdf(tableRef.current, {
-        filename: `report-mensile-${MONTH_NAMES[month - 1].toLowerCase()}-${year}.pdf`,
-        orientation: 'landscape',
-        title: `Report Mensile — ${MONTH_NAMES[month - 1]} ${year}`,
-        headerLines: [
-          `CoE: ${coeLabel}     Sede: ${sedeLabel}`,
-        ],
-      })
-    } finally {
-      setExporting(false)
-    }
+    const coeLabel = filterCoe ? (coeList?.find(c => c._id === filterCoe)?.nome ?? '') : 'Tutti i CoE'
+    const sedeLabel = filterSede ? (sediList?.find(s => s._id === filterSede)?.areaGeografica ?? '') : 'Tutte le Sedi'
+    printElement(tableRef.current, {
+      orientation: 'landscape',
+      title: `Report Mensile — ${MONTH_NAMES[month - 1]} ${year}`,
+      headerLines: [`CoE: ${coeLabel}     Sede: ${sedeLabel}`],
+    })
   }
 
   const days = useMemo(() => {
@@ -340,10 +331,10 @@ export default function ReportMensile() {
         </div>
         <button
           onClick={handleExportPdf}
-          disabled={exporting || isLoading || filteredDipendenti.length === 0}
+          disabled={isLoading || filteredDipendenti.length === 0}
           className="shrink-0 text-sm text-slate-500 hover:text-blue-600 border border-slate-200 hover:border-blue-300 rounded-lg px-3 py-2 transition-colors disabled:opacity-40"
         >
-          {exporting ? 'Esportazione…' : 'Scarica PDF'}
+          Stampa / Salva PDF
         </button>
       </div>
 
