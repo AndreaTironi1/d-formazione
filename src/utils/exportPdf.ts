@@ -61,6 +61,7 @@ export function printElement(element: HTMLElement, options: PrintOptions = {}): 
       @page { size: ${orientation}; margin: 12mm; }
       body > *:not(#__print_wrapper__) { display: none !important; }
       #__print_wrapper__ { display: block !important; }
+      * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
     }
     #__print_wrapper__ { display: none; }
   `

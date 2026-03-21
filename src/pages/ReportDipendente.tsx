@@ -169,7 +169,7 @@ function SedeBadges({ dip }: { dip: Dipendente }) {
   return <span className="text-xs text-slate-400">—</span>
 }
 
-// Gantt row for a single corso — 2-row layout
+// Table row for a single corso
 function GanttRow({
   iscrizione,
   year,
@@ -190,68 +190,60 @@ function GanttRow({
       : null
 
   return (
-    <div className="py-1.5 space-y-1">
-      {/* Row 1: title + destinatari + priority + ore + dates */}
-      <div className="flex items-center gap-2 flex-wrap">
-        <span className="text-sm font-medium text-slate-700 truncate max-w-xs" title={corso.titolo}>
-          {corso.titolo}
-        </span>
+    <tr className="border-b border-slate-100 last:border-0">
+      {/* Titolo */}
+      <td className="py-2 pr-3 text-sm text-slate-700 max-w-[180px]">
+        <span className="block truncate" title={corso.titolo}>{corso.titolo}</span>
+      </td>
 
-        {corso.destinatari && (
-          <span className="px-1.5 py-0.5 rounded text-xs font-medium bg-violet-100 text-violet-700 shrink-0">
-            {corso.destinatari}
-          </span>
-        )}
+      {/* Destinatari */}
+      <td className="py-2 px-2 whitespace-nowrap">
+        {corso.destinatari
+          ? <span className="px-1.5 py-0.5 rounded text-xs font-medium bg-violet-100 text-violet-700">{corso.destinatari}</span>
+          : <span className="text-slate-300 text-xs">—</span>
+        }
+      </td>
 
+      {/* Priorità */}
+      <td className="py-2 px-2 whitespace-nowrap">
         <span
-          className={cn(
-            'shrink-0 px-1.5 py-0.5 rounded text-xs font-medium text-white',
-            barColor
-          )}
-          title={`Priorità ${priorita}: ${PRIORITY_LABEL[priorita] ?? ''}`}
+          className={cn('px-1.5 py-0.5 rounded text-xs font-medium text-white', barColor)}
+          title={`${PRIORITY_LABEL[priorita] ?? ''}`}
         >
           P{priorita}
         </span>
+      </td>
 
-        {ore != null && (
-          <span className="text-xs text-slate-500 shrink-0">{ore}h</span>
-        )}
+      {/* Ore */}
+      <td className="py-2 px-2 text-xs text-slate-500 text-right whitespace-nowrap">
+        {ore != null ? `${ore}h` : '—'}
+      </td>
 
-        {corso.dataInizio && corso.dataFine && (
-          <span className="text-xs text-slate-400 shrink-0">
-            {formatDateShort(corso.dataInizio)} → {formatDateShort(corso.dataFine)}
-          </span>
-        )}
-      </div>
+      {/* Date */}
+      <td className="py-2 px-2 text-xs text-slate-400 text-center whitespace-nowrap">
+        {corso.dataInizio && corso.dataFine
+          ? `${formatDateShort(corso.dataInizio)} → ${formatDateShort(corso.dataFine)}`
+          : '—'
+        }
+      </td>
 
-      {/* Row 2: Gantt bar */}
-      <div className="relative h-4 bg-slate-100 rounded overflow-hidden">
-        {bar ? (
-          <div
-            className={cn('absolute top-0 h-full rounded opacity-80', barColor)}
-            style={{ left: `${bar.left}%`, width: `${bar.width}%` }}
-            title={`${corso.dataInizio} → ${corso.dataFine}`}
-          />
-        ) : (
-          <span className="absolute inset-0 flex items-center justify-center text-xs text-slate-400">
-            {corso.dataInizio ? 'fuori anno' : 'date non definite'}
-          </span>
-        )}
-      </div>
-    </div>
-  )
-}
-
-// Months header for the Gantt
-function GanttHeader() {
-  return (
-    <div className="flex mb-1">
-      {MONTHS.map((m) => (
-        <div key={m} className="flex-1 text-center text-xs text-slate-400 font-medium">
-          {m}
+      {/* Gantt bar */}
+      <td className="py-2 pl-2 w-full min-w-[200px]">
+        <div className="relative h-4 bg-slate-100 rounded overflow-hidden">
+          {bar ? (
+            <div
+              className={cn('absolute top-0 h-full rounded opacity-80', barColor)}
+              style={{ left: `${bar.left}%`, width: `${bar.width}%` }}
+              title={`${corso.dataInizio} → ${corso.dataFine}`}
+            />
+          ) : (
+            <span className="absolute inset-0 flex items-center justify-center text-xs text-slate-400">
+              {corso.dataInizio ? 'fuori anno' : '—'}
+            </span>
+          )}
         </div>
-      ))}
-    </div>
+      </td>
+    </tr>
   )
 }
 
@@ -331,14 +323,30 @@ function DipCard({
           <p className="text-sm text-slate-400 italic">Nessun corso iscritto.</p>
         ) : (
           <div className="overflow-x-auto">
-            <div className="min-w-[640px]">
-              <GanttHeader />
-              <div className="divide-y divide-slate-100">
+            <table className="w-full text-sm border-collapse min-w-[640px]">
+              <thead>
+                <tr className="border-b border-slate-200">
+                  <th className="text-left text-xs font-semibold text-slate-500 py-1.5 pr-3">Corso</th>
+                  <th className="text-left text-xs font-semibold text-slate-500 py-1.5 px-2">Destinatari</th>
+                  <th className="text-left text-xs font-semibold text-slate-500 py-1.5 px-2">Priorità</th>
+                  <th className="text-right text-xs font-semibold text-slate-500 py-1.5 px-2">Ore</th>
+                  <th className="text-center text-xs font-semibold text-slate-500 py-1.5 px-2">Date</th>
+                  <th className="text-left py-1 pl-2 w-full min-w-[200px]">
+                    <div className="text-xs font-semibold text-slate-500 mb-0.5">Timeline {year}</div>
+                    <div className="flex">
+                      {MONTHS.map(m => (
+                        <div key={m} className="flex-1 text-center text-[9px] text-slate-400">{m}</div>
+                      ))}
+                    </div>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
                 {myIscrizioni.map((isc) => (
                   <GanttRow key={isc._id} iscrizione={isc} year={year} />
                 ))}
-              </div>
-            </div>
+              </tbody>
+            </table>
           </div>
         )}
       </div>

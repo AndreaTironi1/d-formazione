@@ -274,13 +274,13 @@ export default function ReportMensile() {
   const [filterSede, setFilterSede] = useState('')
   const [showLabels, setShowLabels] = useState(true)
   const [selectedCorso, setSelectedCorso] = useState<CorsoInfo | null>(null)
-  const tableRef = useRef<HTMLTableElement>(null)
+  const printRef = useRef<HTMLDivElement>(null)
 
   const handleExportPdf = () => {
-    if (!tableRef.current) return
+    if (!printRef.current) return
     const coeLabel = filterCoe ? (coeList?.find(c => c._id === filterCoe)?.nome ?? '') : 'Tutti i CoE'
     const sedeLabel = filterSede ? (sediList?.find(s => s._id === filterSede)?.areaGeografica ?? '') : 'Tutte le Sedi'
-    printElement(tableRef.current, {
+    printElement(printRef.current, {
       orientation: 'landscape',
       title: `Report Mensile — ${MONTH_NAMES[month - 1]} ${year}`,
       headerLines: [`CoE: ${coeLabel}     Sede: ${sedeLabel}`],
@@ -342,6 +342,17 @@ export default function ReportMensile() {
       <div className="card p-4">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <div>
+            <label className="block text-xs font-medium text-slate-500 mb-1">Anno</label>
+            <select
+              className="input-field"
+              value={year}
+              onChange={e => setYear(Number(e.target.value))}
+            >
+              {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
+            </select>
+          </div>
+
+          <div>
             <label className="block text-xs font-medium text-slate-500 mb-1">Mese</label>
             <select
               className="input-field"
@@ -351,17 +362,6 @@ export default function ReportMensile() {
               {MONTH_NAMES.map((name, i) => (
                 <option key={i + 1} value={i + 1}>{name}</option>
               ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1">Anno</label>
-            <select
-              className="input-field"
-              value={year}
-              onChange={e => setYear(Number(e.target.value))}
-            >
-              {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
             </select>
           </div>
 
@@ -416,8 +416,9 @@ export default function ReportMensile() {
         <div className="text-center py-16 text-slate-400 text-sm">Nessun dipendente trovato.</div>
       ) : (
         <div className="card overflow-hidden">
+          <div ref={printRef}>
           <div className="overflow-x-auto">
-            <table ref={tableRef} className="text-xs border-collapse">
+            <table className="text-xs border-collapse">
               <thead>
                 <tr className="bg-slate-50">
                   <th className="sticky left-0 z-10 bg-slate-50 border border-slate-200 px-3 py-2 text-left font-semibold text-slate-600 min-w-[200px] whitespace-nowrap">
@@ -461,6 +462,45 @@ export default function ReportMensile() {
               </div>
             ))}
           </div>
+
+          {/* Dettaglio per dipendente (visibile a schermo e in stampa) */}
+          <div className="px-4 py-4 border-t border-slate-200 space-y-4">
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+              Dettaglio corsi — {MONTH_NAMES[month - 1]} {year}
+            </p>
+            {filteredDipendenti.map(dip => {
+              const corsiMese = (iscrizioni ?? []).filter(i => {
+                if (String(i.dipendenteId) !== String(dip._id)) return false
+                if (!i.corso?.dataInizio || !i.corso?.dataFine) return false
+                const start = new Date(i.corso.dataInizio)
+                const end = new Date(i.corso.dataFine)
+                const monthStart = new Date(year, month - 1, 1)
+                const monthEnd = new Date(year, month, 0, 23, 59, 59, 999)
+                return start <= monthEnd && end >= monthStart
+              }).map(i => i.corso!)
+              return (
+                <div key={String(dip._id)}>
+                  <p className="text-sm font-semibold text-slate-800">{dip.nome}</p>
+                  <ul className="mt-1 space-y-0.5 ml-3">
+                    {corsiMese.map((c, idx) => (
+                      <li key={idx} className="text-xs text-slate-600">
+                        <span className="font-medium">{c.titolo}</span>
+                        {c.destinatari && (
+                          <span className="ml-1.5 px-1 py-0.5 rounded bg-violet-100 text-violet-700 text-[10px]">{c.destinatari}</span>
+                        )}
+                        {c.dataInizio && c.dataFine && (
+                          <span className="ml-2 text-slate-400">
+                            {c.dataInizio} → {c.dataFine}
+                          </span>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )
+            })}
+          </div>
+          </div>{/* end printRef */}
         </div>
       )}
 
