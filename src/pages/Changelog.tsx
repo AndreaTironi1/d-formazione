@@ -10,6 +10,32 @@ interface Release {
 
 const releases: Release[] = [
   {
+    version: '0.4.5',
+    date: '2026-03-21',
+    changes: [
+      {
+        title: 'Iscrizioni: destinatari visibili accanto al titolo del corso',
+        description:
+          'Nella lista iscrizioni, accanto al nome del corso compare ora un\'etichetta colorata con i destinatari (ad esempio "J/M" o "Senior"), così si capisce subito a chi è rivolto il corso senza dover aprire la scheda.',
+      },
+      {
+        title: 'Nuova iscrizione: destinatari nel menu di selezione corso',
+        description:
+          'Nel modulo per creare una nuova iscrizione, ogni corso nel menu a tendina mostra in coda i destinatari (es. "— J/M"), rendendo più facile scegliere il corso giusto.',
+      },
+      {
+        title: 'Riepilogo iscrizioni: destinatari nel messaggio di conferma',
+        description:
+          'Dopo il salvataggio di un\'iscrizione, il riepilogo a video mostra l\'etichetta con i destinatari accanto al nome del corso, in modo da confermare che si è selezionato il corso corretto.',
+      },
+      {
+        title: 'Report Dipendenti: destinatari e layout a due righe nel Gantt',
+        description:
+          'Nella timeline del Report Dipendenti, ogni corso mostra ora in una riga il titolo, i destinatari, la priorità, le ore e le date. La barra colorata del Gantt si trova nella riga sotto, occupando tutta la larghezza disponibile per una lettura più chiara del calendario.',
+      },
+    ],
+  },
+  {
     version: '0.4.4',
     date: '2026-03-21',
     changes: [

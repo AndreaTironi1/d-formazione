@@ -38,6 +38,7 @@ type Iscrizione = {
   dipendente?: { nome: string } | null
   corso?: {
     titolo: string
+    destinatari?: string
     dataInizio?: string
     dataFine?: string
     oreAula?: number
@@ -168,7 +169,7 @@ function SedeBadges({ dip }: { dip: Dipendente }) {
   return <span className="text-xs text-slate-400">—</span>
 }
 
-// Gantt row for a single corso
+// Gantt row for a single corso — 2-row layout
 function GanttRow({
   iscrizione,
   year,
@@ -181,6 +182,7 @@ function GanttRow({
 
   const priorita = corso.priorita ?? 1
   const barColor = PRIORITY_COLORS[priorita] ?? 'bg-slate-400'
+  const ore = corso.oreAula ?? corso.durataOre
 
   const bar =
     corso.dataInizio && corso.dataFine
@@ -188,25 +190,42 @@ function GanttRow({
       : null
 
   return (
-    <div className="flex items-center gap-3 py-1.5">
-      {/* Titolo */}
-      <div className="w-48 shrink-0 text-sm text-slate-700 truncate" title={corso.titolo}>
-        {corso.titolo}
+    <div className="py-1.5 space-y-1">
+      {/* Row 1: title + destinatari + priority + ore + dates */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <span className="text-sm font-medium text-slate-700 truncate max-w-xs" title={corso.titolo}>
+          {corso.titolo}
+        </span>
+
+        {corso.destinatari && (
+          <span className="px-1.5 py-0.5 rounded text-xs font-medium bg-violet-100 text-violet-700 shrink-0">
+            {corso.destinatari}
+          </span>
+        )}
+
+        <span
+          className={cn(
+            'shrink-0 px-1.5 py-0.5 rounded text-xs font-medium text-white',
+            barColor
+          )}
+          title={`Priorità ${priorita}: ${PRIORITY_LABEL[priorita] ?? ''}`}
+        >
+          P{priorita}
+        </span>
+
+        {ore != null && (
+          <span className="text-xs text-slate-500 shrink-0">{ore}h</span>
+        )}
+
+        {corso.dataInizio && corso.dataFine && (
+          <span className="text-xs text-slate-400 shrink-0">
+            {formatDateShort(corso.dataInizio)} → {formatDateShort(corso.dataFine)}
+          </span>
+        )}
       </div>
 
-      {/* Priorità badge */}
-      <span
-        className={cn(
-          'shrink-0 px-1.5 py-0.5 rounded text-xs font-medium text-white',
-          barColor
-        )}
-        title={`Priorità ${priorita}: ${PRIORITY_LABEL[priorita] ?? ''}`}
-      >
-        P{priorita}
-      </span>
-
-      {/* Gantt track */}
-      <div className="flex-1 relative h-5 bg-slate-100 rounded overflow-hidden">
+      {/* Row 2: Gantt bar */}
+      <div className="relative h-4 bg-slate-100 rounded overflow-hidden">
         {bar ? (
           <div
             className={cn('absolute top-0 h-full rounded opacity-80', barColor)}
@@ -219,16 +238,6 @@ function GanttRow({
           </span>
         )}
       </div>
-
-      {/* Ore + range date */}
-      <div className="shrink-0 text-xs text-slate-400 w-28 text-right space-y-0.5">
-        {corso.oreAula != null && <div>{corso.oreAula}h</div>}
-        {corso.dataInizio && corso.dataFine && (
-          <div className="text-[10px]">
-            {formatDateShort(corso.dataInizio)} → {formatDateShort(corso.dataFine)}
-          </div>
-        )}
-      </div>
     </div>
   )
 }
@@ -236,20 +245,12 @@ function GanttRow({
 // Months header for the Gantt
 function GanttHeader() {
   return (
-    <div className="flex items-center gap-3 mb-1">
-      {/* Spacer for titolo + badge */}
-      <div className="w-48 shrink-0" />
-      <div className="w-10 shrink-0" />
-      {/* Month labels */}
-      <div className="flex-1 flex">
-        {MONTHS.map((m) => (
-          <div key={m} className="flex-1 text-center text-xs text-slate-400 font-medium">
-            {m}
-          </div>
-        ))}
-      </div>
-      {/* Spacer for ore */}
-      <div className="w-12 shrink-0" />
+    <div className="flex mb-1">
+      {MONTHS.map((m) => (
+        <div key={m} className="flex-1 text-center text-xs text-slate-400 font-medium">
+          {m}
+        </div>
+      ))}
     </div>
   )
 }

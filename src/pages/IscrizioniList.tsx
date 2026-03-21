@@ -18,7 +18,7 @@ type IscrizioneRow = {
   dipendenteId: Id<'dipendenti'>
   corsoId: Id<'corsi'>
   dipendente?: { nome: string; seniority?: string } | null
-  corso?: { titolo: string; priorita: number; idCorso: string } | null
+  corso?: { titolo: string; priorita: number; idCorso: string; destinatari?: string } | null
 }
 
 const PRIORITA_COLORS: Record<number, string> = {
@@ -39,7 +39,7 @@ export default function IscrizioniList() {
   const [modalOpen, setModalOpen] = useState(false)
   const [deleteItem, setDeleteItem] = useState<IscrizioneRow | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [bulkResult, setBulkResult] = useState<{ result: BulkResult; corsoTitolo: string } | null>(null)
+  const [bulkResult, setBulkResult] = useState<{ result: BulkResult; corsoTitolo: string; corsoDestinatari?: string } | null>(null)
 
   const [filterDipendente, setFilterDipendente] = useState('')
   const [filterCorso, setFilterCorso] = useState('')
@@ -78,9 +78,11 @@ export default function IscrizioniList() {
         corsoId: formCorsoId as Id<'corsi'>,
         dipendenteIds: formDipendenteIds as Id<'dipendenti'>[],
       })
-      const corsoTitolo = corsi?.find(c => c._id === formCorsoId)?.titolo ?? formCorsoId
+      const corsoFound = corsi?.find(c => c._id === formCorsoId)
+      const corsoTitolo = corsoFound?.titolo ?? formCorsoId
+      const corsoDestinatari = corsoFound?.destinatari
       setModalOpen(false)
-      setBulkResult({ result, corsoTitolo })
+      setBulkResult({ result, corsoTitolo, corsoDestinatari })
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Errore durante la creazione delle iscrizioni.')
     } finally {
@@ -220,7 +222,14 @@ export default function IscrizioniList() {
                       {row.corso?.idCorso ?? '—'}
                     </td>
                     <td className="px-4 py-3 text-slate-700">
-                      {row.corso?.titolo ?? <span className="text-slate-400">—</span>}
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span>{row.corso?.titolo ?? <span className="text-slate-400">—</span>}</span>
+                        {row.corso?.destinatari && (
+                          <span className="px-1.5 py-0.5 rounded text-xs font-medium bg-violet-100 text-violet-700 shrink-0">
+                            {row.corso.destinatari}
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-4 py-3">
                       {row.corso ? (
@@ -281,7 +290,7 @@ export default function IscrizioniList() {
               <option value="">— Seleziona corso —</option>
               {corsi?.map((c) => (
                 <option key={c._id} value={c._id}>
-                  [{c.idCorso}] {c.titolo}
+                  [{c.idCorso}] {c.titolo}{c.destinatari ? ` — ${c.destinatari}` : ''}
                 </option>
               ))}
             </select>
@@ -381,9 +390,15 @@ export default function IscrizioniList() {
       >
         {bulkResult && (
           <div className="space-y-4">
-            <p className="text-sm text-slate-500">
-              Corso: <span className="font-semibold text-slate-800">{bulkResult.corsoTitolo}</span>
-            </p>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-sm text-slate-500">Corso:</span>
+              <span className="text-sm font-semibold text-slate-800">{bulkResult.corsoTitolo}</span>
+              {bulkResult.corsoDestinatari && (
+                <span className="px-1.5 py-0.5 rounded text-xs font-medium bg-violet-100 text-violet-700">
+                  {bulkResult.corsoDestinatari}
+                </span>
+              )}
+            </div>
 
             {bulkResult.result.created.length > 0 && (
               <div className="space-y-1">
