@@ -17,18 +17,40 @@ export async function exportToPdf(
   const canvas = await html2canvas(element, {
     scale: 2,
     useCORS: true,
+    allowTaint: true,
     scrollX: 0,
     scrollY: 0,
     width: element.scrollWidth,
     height: element.scrollHeight,
     windowWidth: element.scrollWidth,
+    windowHeight: element.scrollHeight,
   })
 
   const imgData = canvas.toDataURL('image/png')
-  const pdf = new jsPDF({ orientation, unit: 'mm', format: 'a4' })
-  const pageWidth = pdf.internal.pageSize.getWidth()
-  const pageHeight = pdf.internal.pageSize.getHeight()
   const margin = 12
+
+  // Base page width from orientation
+  const baseWidth = orientation === 'landscape' ? 297 : 210
+  const minHeight = orientation === 'landscape' ? 210 : 297
+
+  // Calculate vertical space needed for header
+  let headerHeight = margin
+  if (title) headerHeight += 8
+  if (headerLines.length > 0) headerHeight += headerLines.length * 5 + 3
+  const footerHeight = margin + 8
+
+  // Scale image to fit page width, then compute needed page height
+  const availableWidth = baseWidth - margin * 2
+  const imgScaledHeight = (canvas.height / canvas.width) * availableWidth
+  const totalNeededHeight = headerHeight + imgScaledHeight + footerHeight
+
+  // Create PDF with dynamic height so content is never clipped
+  const docHeight = Math.max(minHeight, totalNeededHeight)
+  const pdf = new jsPDF({
+    orientation,
+    unit: 'mm',
+    format: [baseWidth, docHeight],
+  })
 
   let yPos = margin
 
@@ -49,17 +71,7 @@ export async function exportToPdf(
     yPos += 3
   }
 
-  const availableWidth = pageWidth - margin * 2
-  const availableHeight = pageHeight - yPos - margin - 8
-
-  let finalWidth = availableWidth
-  let finalHeight = (canvas.height / canvas.width) * finalWidth
-  if (finalHeight > availableHeight) {
-    finalHeight = availableHeight
-    finalWidth = (canvas.width / canvas.height) * finalHeight
-  }
-
-  pdf.addImage(imgData, 'PNG', margin, yPos, finalWidth, finalHeight)
+  pdf.addImage(imgData, 'PNG', margin, yPos, availableWidth, imgScaledHeight)
 
   const timestamp = new Date().toLocaleString('it-IT', {
     day: '2-digit', month: '2-digit', year: 'numeric',
@@ -67,7 +79,7 @@ export async function exportToPdf(
   })
   pdf.setFontSize(7)
   pdf.setTextColor(160, 160, 160)
-  pdf.text(`Esportato il ${timestamp}`, margin, pageHeight - 5)
+  pdf.text(`Esportato il ${timestamp}`, margin, docHeight - 5)
 
   pdf.save(filename)
 }
