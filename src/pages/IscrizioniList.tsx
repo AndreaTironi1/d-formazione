@@ -222,14 +222,7 @@ export default function IscrizioniList() {
                       {row.corso?.idCorso ?? '—'}
                     </td>
                     <td className="px-4 py-3 text-slate-700">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span>{row.corso?.titolo ?? <span className="text-slate-400">—</span>}</span>
-                        {row.corso?.destinatari && (
-                          <span className="px-1.5 py-0.5 rounded text-xs font-medium bg-violet-100 text-violet-700 shrink-0">
-                            {row.corso.destinatari}
-                          </span>
-                        )}
-                      </div>
+                      {row.corso?.titolo ?? <span className="text-slate-400">—</span>}
                     </td>
                     <td className="px-4 py-3">
                       {row.corso ? (
