@@ -14,6 +14,7 @@ type SedeRow = {
   areaGeografica: string
   responsabileId?: Id<'dipendenti'>
   responsabile?: { nome: string } | null
+  isNazionale?: boolean
 }
 
 export default function SediList() {
@@ -32,11 +33,12 @@ export default function SediList() {
     idSede: '',
     areaGeografica: '',
     responsabileId: '' as string,
+    isNazionale: false,
   })
 
   const openCreate = () => {
     setEditItem(null)
-    setFormData({ idSede: '', areaGeografica: '', responsabileId: '' })
+    setFormData({ idSede: '', areaGeografica: '', responsabileId: '', isNazionale: false })
     setModalOpen(true)
   }
 
@@ -46,6 +48,7 @@ export default function SediList() {
       idSede: item.idSede,
       areaGeografica: item.areaGeografica,
       responsabileId: item.responsabileId ?? '',
+      isNazionale: item.isNazionale ?? false,
     })
     setModalOpen(true)
   }
@@ -62,6 +65,7 @@ export default function SediList() {
         responsabileId: formData.responsabileId
           ? (formData.responsabileId as Id<'dipendenti'>)
           : undefined,
+        isNazionale: formData.isNazionale || undefined,
       }
       if (editItem) {
         await updateSede({ id: editItem._id, ...payload })
@@ -87,7 +91,21 @@ export default function SediList() {
 
   const columns: Column<SedeRow>[] = [
     { key: 'idSede', label: 'ID Sede', sortable: true },
-    { key: 'areaGeografica', label: 'Area Geografica', sortable: true },
+    {
+      key: 'areaGeografica',
+      label: 'Area Geografica',
+      sortable: true,
+      render: (row) => (
+        <div className="flex items-center gap-2">
+          <span>{row.areaGeografica}</span>
+          {row.isNazionale && (
+            <span className="px-1.5 py-0.5 rounded text-[11px] font-semibold bg-blue-100 text-blue-700">
+              Nazionale
+            </span>
+          )}
+        </div>
+      ),
+    },
     {
       key: 'responsabile',
       label: 'Responsabile',
@@ -185,6 +203,18 @@ export default function SediList() {
                 </option>
               ))}
             </select>
+          </div>
+
+          <div>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={formData.isNazionale}
+                onChange={(e) => setFormData((f) => ({ ...f, isNazionale: e.target.checked }))}
+                className="w-4 h-4 rounded accent-blue-600"
+              />
+              <span className="text-sm text-slate-700">Sede Nazionale (copre tutta Italia)</span>
+            </label>
           </div>
 
           <div className="flex gap-3 pt-2">

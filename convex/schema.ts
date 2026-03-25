@@ -14,6 +14,7 @@ export default defineSchema({
     idSede: v.string(),
     areaGeografica: v.string(),
     responsabileId: v.optional(v.id("dipendenti")),
+    isNazionale: v.optional(v.boolean()),
   })
     .index("by_idSede", ["idSede"])
     .index("by_areaGeografica", ["areaGeografica"]),

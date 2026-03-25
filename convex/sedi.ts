@@ -46,6 +46,7 @@ export const create = mutation({
     idSede: v.string(),
     areaGeografica: v.string(),
     responsabileId: v.optional(v.id("dipendenti")),
+    isNazionale: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
     return await ctx.db.insert("sedi", args);
@@ -58,6 +59,7 @@ export const update = mutation({
     idSede: v.optional(v.string()),
     areaGeografica: v.optional(v.string()),
     responsabileId: v.optional(v.id("dipendenti")),
+    isNazionale: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
     const { id, ...fields } = args;

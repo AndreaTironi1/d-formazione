@@ -292,6 +292,11 @@ export default function ReportMensile() {
     return Array.from({ length: n }, (_, i) => i + 1)
   }, [year, month])
 
+  const nazionaleId = useMemo(
+    () => sediList?.find(s => s.isNazionale)?._id,
+    [sediList]
+  )
+
   const filteredDipendenti = useMemo(() => {
     if (!dipendenti || !iscrizioni) return []
     const monthStart = new Date(year, month - 1, 1)
@@ -303,9 +308,17 @@ export default function ReportMensile() {
         if (!inPrimary && !inMultipli) return false
       }
       if (filterSede) {
-        const inPrimary = String(d.sedeId) === filterSede
-        const inMultipli = d.sediMultiple?.some(ds => String(ds.sedeId) === filterSede)
-        if (!inPrimary && !inMultipli) return false
+        // Se si seleziona la sede Nazionale → nessun filtro, si vedono tutti
+        if (filterSede !== String(nazionaleId)) {
+          const inPrimary = String(d.sedeId) === filterSede
+          const inMultipli = d.sediMultiple?.some(ds => String(ds.sedeId) === filterSede)
+          // I dipendenti assegnati alla sede Nazionale appaiono in qualsiasi filtro sede
+          const isNazionale = nazionaleId && (
+            String(d.sedeId) === String(nazionaleId) ||
+            d.sediMultiple?.some(ds => String(ds.sedeId) === String(nazionaleId))
+          )
+          if (!inPrimary && !inMultipli && !isNazionale) return false
+        }
       }
       return iscrizioni.some(i => {
         if (String(i.dipendenteId) !== String(d._id)) return false
@@ -315,7 +328,7 @@ export default function ReportMensile() {
         return start <= monthEnd && end >= monthStart
       })
     })
-  }, [dipendenti, iscrizioni, filterCoe, filterSede, year, month])
+  }, [dipendenti, iscrizioni, filterCoe, filterSede, nazionaleId, year, month])
 
   const isLoading = dipendenti === undefined || iscrizioni === undefined
 
