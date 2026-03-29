@@ -12,6 +12,7 @@ import {
   ClipboardList,
   Upload,
   Download,
+  Trash2,
   BarChart2,
   CalendarDays,
   ChevronDown,
@@ -49,6 +50,7 @@ const navSections: NavSection[] = [
     items: [
       { to: '/importa', label: 'Importa dati', icon: Upload },
       { to: '/esporta', label: 'Esporta dati', icon: Download },
+      { to: '/cancella-dati', label: 'Cancella dati', icon: Trash2 },
     ],
   },
 ]

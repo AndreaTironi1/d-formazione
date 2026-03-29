@@ -11,6 +11,7 @@ import SessioniList from './pages/SessioniList'
 import IscrizioniList from './pages/IscrizioniList'
 import ImportExcel from './components/ImportExcel'
 import ExportExcel from './pages/ExportExcel'
+import CancellazioneDB from './pages/CancellazioneDB'
 import ReportDipendente from './pages/ReportDipendente'
 import ReportMensile from './pages/ReportMensile'
 import Changelog from './pages/Changelog'
@@ -57,6 +58,7 @@ function App() {
         <Route path="/iscrizioni" element={<IscrizioniList />} />
         <Route path="/importa" element={<ImportExcel />} />
         <Route path="/esporta" element={<ExportExcel />} />
+        <Route path="/cancella-dati" element={<CancellazioneDB />} />
         <Route path="/report" element={<ReportDipendente />} />
         <Route path="/report-mensile" element={<ReportMensile />} />
         <Route path="/changelog" element={<Changelog />} />

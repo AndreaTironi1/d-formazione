@@ -64,7 +64,6 @@ export default function IscrizioniList() {
   const [search, setSearch] = useState('')
 
   // Form state
-  const [formCorsoId, setFormCorsoId] = useState('')
   const [formSessioneId, setFormSessioneId] = useState('')
   const [formDipendenteIds, setFormDipendenteIds] = useState<string[]>([])
   const [formSearch, setFormSearch] = useState('')
@@ -81,23 +80,11 @@ export default function IscrizioniList() {
     return (dipendenti ?? []).filter((d) => d.nome.toLowerCase().includes(q))
   }, [dipendenti, formSearch])
 
-  const sessioniForCorso = useMemo(() => {
-    if (!formCorsoId) return []
-    return (sessioni ?? []).filter(s => s.corsoId === formCorsoId)
-  }, [sessioni, formCorsoId])
-
   const handleOpenModal = () => {
-    setFormCorsoId('')
     setFormSessioneId('')
     setFormDipendenteIds([])
     setFormSearch('')
     setModalOpen(true)
-  }
-
-  const handleChangeCorso = (corsoId: string) => {
-    setFormCorsoId(corsoId)
-    setFormSessioneId('')
-    setFormDipendenteIds([])
   }
 
   const handleCreate = async (e: React.FormEvent) => {
@@ -308,65 +295,38 @@ export default function IscrizioniList() {
         size="md"
       >
         <form onSubmit={handleCreate} className="space-y-4">
-          {/* Step 1: Select corso */}
+          {/* Step 1: Select sessione */}
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">
-              Corso <span className="text-red-500">*</span>
+              Sessione <span className="text-red-500">*</span>
             </label>
             <select
               className="input-field"
-              value={formCorsoId}
-              onChange={(e) => handleChangeCorso(e.target.value)}
+              value={formSessioneId}
+              onChange={(e) => { setFormSessioneId(e.target.value); setFormDipendenteIds([]) }}
               required
             >
-              <option value="">— Seleziona corso —</option>
-              {corsi?.map((c) => (
-                <option key={c._id} value={c._id}>
-                  [{c.idCorso}] {c.titolo}
+              <option value="">— Seleziona sessione —</option>
+              {(sessioni ?? []).map((s) => (
+                <option key={s._id} value={s._id}>
+                  {s.corso ? `[${s.corso.idCorso}] ` : ''}{s.tema}{s.corso ? ` — ${s.corso.titolo}` : ''}
                 </option>
               ))}
             </select>
+            {formSessioneId && (() => {
+              const s = sessioni?.find(x => x._id === formSessioneId)
+              if (!s) return null
+              const start = formatDate(s.dataInizio)
+              const end = formatDate(s.dataFine)
+              return (
+                <p className="mt-1 text-xs text-slate-500">
+                  {start && end ? `${start} → ${end} · ` : ''}{s.iscrizioniCount} già iscritti
+                </p>
+              )
+            })()}
           </div>
 
-          {/* Step 2: Select sessione (appears when corso is chosen) */}
-          {formCorsoId && (
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Sessione <span className="text-red-500">*</span>
-              </label>
-              {sessioniForCorso.length === 0 ? (
-                <p className="text-sm text-slate-400 italic py-2">
-                  Nessuna sessione disponibile per questo corso.
-                </p>
-              ) : (
-                <div className="border border-slate-200 rounded-lg overflow-y-auto max-h-40">
-                  {sessioniForCorso.map((s) => {
-                    const selected = formSessioneId === s._id
-                    const start = formatDate(s.dataInizio)
-                    const end = formatDate(s.dataFine)
-                    return (
-                      <div
-                        key={s._id}
-                        onClick={() => { setFormSessioneId(s._id); setFormDipendenteIds([]) }}
-                        className={`flex items-start gap-3 px-3 py-2.5 cursor-pointer border-b border-slate-100 last:border-0 hover:bg-slate-50 transition-colors ${selected ? 'bg-blue-50' : ''}`}
-                      >
-                        <div className={`mt-0.5 w-4 h-4 rounded-full flex-shrink-0 border-2 ${selected ? 'border-blue-600 bg-blue-600' : 'border-slate-300'}`} />
-                        <div>
-                          <p className="text-sm font-medium text-slate-800">{s.tema}</p>
-                          {(start || end) && (
-                            <p className="text-xs text-slate-500">{start ?? '—'} → {end ?? '—'}</p>
-                          )}
-                        </div>
-                        <span className="ml-auto text-xs text-slate-400 flex-shrink-0">{s.iscrizioniCount} iscritti</span>
-                      </div>
-                    )
-                  })}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Step 3: Select dipendenti (appears when sessione is chosen) */}
+          {/* Step 2: Select dipendenti (appears when sessione is chosen) */}
           {formSessioneId && (
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">
