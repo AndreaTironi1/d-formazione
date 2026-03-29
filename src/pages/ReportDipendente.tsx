@@ -185,11 +185,11 @@ function GanttRow({
 }) {
   const sessione = iscrizione.sessione
   const corso = iscrizione.corso
-  if (!corso) return null
+  if (!sessione) return null
 
-  const priorita = corso.priorita ?? 1
+  const priorita = corso?.priorita ?? 1
   const barColor = PRIORITY_COLORS[priorita] ?? 'bg-slate-400'
-  const ore = corso.oreAula ?? corso.durataOre
+  const ore = corso?.oreAula ?? corso?.durataOre
 
   const dataInizio = sessione?.dataInizio
   const dataFine = sessione?.dataFine
@@ -199,23 +199,21 @@ function GanttRow({
       ? getGanttBar(dataInizio, dataFine, year)
       : null
 
-  const temaLabel = sessione?.tema
-    ? `${sessione.tema}`
-    : corso.titolo
+  const temaLabel = sessione?.tema ?? corso?.titolo ?? '—'
 
   return (
     <tr className="border-b border-slate-100 last:border-0">
-      {/* Tema + Corso */}
+      {/* Sessione + Corso */}
       <td className="py-2 pr-3 text-sm text-slate-700 max-w-[180px]">
         <span className="block truncate font-medium" title={temaLabel}>{temaLabel}</span>
-        {sessione?.tema && (
+        {corso?.titolo && (
           <span className="block truncate text-xs text-slate-400" title={corso.titolo}>{corso.titolo}</span>
         )}
       </td>
 
       {/* Destinatari */}
       <td className="py-2 px-2 whitespace-nowrap">
-        {corso.destinatari
+        {corso?.destinatari
           ? <span className="px-1.5 py-0.5 rounded text-xs font-medium bg-violet-100 text-violet-700">{corso.destinatari}</span>
           : <span className="text-slate-300 text-xs">—</span>
         }
@@ -237,7 +235,7 @@ function GanttRow({
       </td>
 
       {/* Date */}
-      <td className="py-2 px-2 text-xs text-slate-400 align-top">
+      <td className="py-2 px-2 text-xs text-slate-400">
         {sessione?.giorniErogazione && sessione.giorniErogazione.length > 0 ? (
           <div className="space-y-1">
             {sessione.giorniErogazione.map((g, i) => (
@@ -299,7 +297,13 @@ function DipCard({
   year: number
 }) {
   const cardRef = useRef<HTMLDivElement>(null)
-  const myIscrizioni = iscrizioni.filter((i) => i.dipendenteId === dip._id)
+  const myIscrizioni = iscrizioni
+    .filter((i) => i.dipendenteId === dip._id)
+    .sort((a, b) => {
+      const dateA = a.sessione?.giorniErogazione?.[0]?.data ?? a.sessione?.dataInizio ?? 'z'
+      const dateB = b.sessione?.giorniErogazione?.[0]?.data ?? b.sessione?.dataInizio ?? 'z'
+      return dateA.localeCompare(dateB)
+    })
   const totalOre = myIscrizioni.reduce((sum, i) => sum + (i.corso?.oreAula ?? i.corso?.durataOre ?? 0), 0)
 
   const handleExportPdf = () => {
@@ -346,7 +350,7 @@ function DipCard({
       <div className="flex gap-4">
         <div className="bg-slate-50 rounded-lg px-4 py-2 text-center">
           <p className="text-lg font-bold text-slate-900">{myIscrizioni.length}</p>
-          <p className="text-xs text-slate-500">Corsi</p>
+          <p className="text-xs text-slate-500">Sessioni</p>
         </div>
         <div className="bg-slate-50 rounded-lg px-4 py-2 text-center">
           <p className="text-lg font-bold text-slate-900">{totalOre}</p>
@@ -357,7 +361,7 @@ function DipCard({
       {/* Corsi */}
       <div>
         <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
-          Corsi iscritti ({myIscrizioni.length})
+          Sessioni iscritte ({myIscrizioni.length})
         </h3>
 
         {myIscrizioni.length === 0 ? (
@@ -367,7 +371,7 @@ function DipCard({
             <table className="w-full text-sm border-collapse min-w-[640px]">
               <thead>
                 <tr className="border-b border-slate-200">
-                  <th className="text-left text-xs font-semibold text-slate-500 py-1.5 pr-3">Corso</th>
+                  <th className="text-left text-xs font-semibold text-slate-500 py-1.5 pr-3">Sessione</th>
                   <th className="text-left text-xs font-semibold text-slate-500 py-1.5 px-2">Destinatari</th>
                   <th className="text-left text-xs font-semibold text-slate-500 py-1.5 px-2">Priorità</th>
                   <th className="text-right text-xs font-semibold text-slate-500 py-1.5 px-2">Ore</th>

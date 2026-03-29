@@ -56,6 +56,7 @@ export default defineSchema({
     destinatari: v.string(),
     oreAula: v.optional(v.number()),
     priorita: v.number(),
+    anno: v.optional(v.number()),
     coeId: v.optional(v.id("coe")),
     // Campi scheda corso
     owner: v.optional(v.string()),

@@ -18,6 +18,7 @@ type CorsoRow = {
   destinatari: string
   oreAula?: number
   priorita: number
+  anno?: number
   coeId?: Id<'coe'>
   coe?: { nome: string } | null
   sessioniCount?: number
@@ -59,7 +60,7 @@ const DOCENZA_OPTIONS = ['Interna', 'Esterna', 'Mista']
 
 const emptyForm = {
   idCorso: '', titolo: '', ambito: '', destinatari: 'Junior/Middle',
-  oreAula: '', priorita: '3', coeId: '',
+  oreAula: '', priorita: '3', anno: '', coeId: '',
   owner: '', tutor: '', docenza: '',
   nomeDocenteAula: '', nomeDocenteOnboarding: '',
   durataOre: '', dataInizio: '', dataFine: '',
@@ -77,6 +78,7 @@ function schedaFromItem(item: CorsoRow): FormData {
     destinatari: item.destinatari,
     oreAula: item.oreAula != null ? String(item.oreAula) : '',
     priorita: String(item.priorita),
+    anno: item.anno != null ? String(item.anno) : '',
     coeId: item.coeId ?? '',
     owner: item.owner ?? '',
     tutor: item.tutor ?? '',
@@ -153,6 +155,7 @@ export default function CorsiList() {
   const [schedaItem, setSchedaItem] = useState<CorsoRow | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [filterPriorita, setFilterPriorita] = useState<number | ''>('')
+  const [filterAnno, setFilterAnno] = useState<number | ''>('')
   const [activeTab, setActiveTab] = useState<'base' | 'scheda'>('base')
 
   const [formData, setFormData] = useState<FormData>(emptyForm)
@@ -185,6 +188,7 @@ export default function CorsiList() {
         destinatari: formData.destinatari,
         oreAula: formData.oreAula ? Number(formData.oreAula) : undefined,
         priorita: Number(formData.priorita),
+        anno: formData.anno ? Number(formData.anno) : undefined,
         coeId: formData.coeId ? (formData.coeId as Id<'coe'>) : undefined,
         owner: formData.owner.trim() || undefined,
         tutor: formData.tutor.trim() || undefined,
@@ -222,9 +226,10 @@ export default function CorsiList() {
     }
   }
 
-  const filteredCorsi = filterPriorita
-    ? (corsi ?? []).filter((c) => c.priorita === filterPriorita)
-    : (corsi ?? [])
+  const filteredCorsi = (corsi ?? []).filter(c =>
+    (filterPriorita === '' || c.priorita === filterPriorita) &&
+    (filterAnno === '' || c.anno === filterAnno)
+  )
 
   const columns: Column<CorsoRow>[] = [
     { key: 'idCorso', label: 'ID', sortable: true },
@@ -248,6 +253,14 @@ export default function CorsiList() {
         ) : (
           <span className="text-slate-400">—</span>
         ),
+    },
+    {
+      key: 'anno',
+      label: 'Anno',
+      sortable: true,
+      render: (row) => row.anno != null
+        ? <span className="font-mono text-xs text-slate-600">{row.anno}</span>
+        : <span className="text-slate-400">—</span>,
     },
     {
       key: 'sessioniCount',
@@ -287,6 +300,17 @@ export default function CorsiList() {
 
       {/* Filters */}
       <div className="flex gap-2 flex-wrap">
+        {/* Anno filter */}
+        <select
+          className="input-field w-32"
+          value={filterAnno}
+          onChange={(e) => setFilterAnno(e.target.value ? Number(e.target.value) : '')}
+        >
+          <option value="">Tutti gli anni</option>
+          {[2026, 2027, 2028, 2029, 2030].map(y => (
+            <option key={y} value={y}>{y}</option>
+          ))}
+        </select>
         <button
           onClick={() => setFilterPriorita('')}
           className={cn(
@@ -401,6 +425,18 @@ export default function CorsiList() {
                   <select className="input-field" value={formData.priorita} onChange={set('priorita')} required>
                     {[1, 2, 3, 4, 5].map((p) => (
                       <option key={p} value={p}>{PRIORITA_CONFIG[p].label}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Anno</label>
+                  <select className="input-field" value={formData.anno} onChange={set('anno')}>
+                    <option value="">— Non specificato —</option>
+                    {[2026, 2027, 2028, 2029, 2030].map(y => (
+                      <option key={y} value={y}>{y}</option>
                     ))}
                   </select>
                 </div>

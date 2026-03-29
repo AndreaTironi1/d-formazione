@@ -10,6 +10,27 @@ interface Release {
 
 const releases: Release[] = [
   {
+    version: '0.5.3',
+    date: '2026-03-29',
+    changes: [
+      {
+        title: 'Corsi: campo Anno per associare il corso a un anno specifico',
+        description:
+          'Ogni corso può ora avere un anno di riferimento (es. 2026, 2027…). Il campo è visibile nella lista corsi come colonna e può essere usato come filtro per visualizzare solo i corsi di un determinato anno.',
+      },
+      {
+        title: 'Report Dipendenti: timeline e intestazioni aggiornate per le sessioni',
+        description:
+          'La colonna "Corso" nella scheda del dipendente è diventata "Sessione" e mostra il tema della sessione come titolo principale con il titolo del corso come sottotitolo. Le sessioni sono ordinate per data. La barra Gantt usa i colori della priorità del corso associato alla sessione. La pagina mostra ora "Sessioni iscritte" al posto di "Corsi iscritti".',
+      },
+      {
+        title: 'Report Mensile: celle e dettaglio aggiornati per le sessioni',
+        description:
+          'Le celle della griglia ora mostrano il tema della sessione (di default le etichette sono nascoste — si attivano con "Mostra tema sessione nelle celle"). Il dettaglio in fondo alla pagina elenca le sessioni del mese per ogni dipendente, con tema, titolo del corso e giorni effettivi di svolgimento. Il modale di dettaglio si chiama ora "Dettagli sessione".',
+      },
+    ],
+  },
+  {
     version: '0.5.2',
     date: '2026-03-29',
     changes: [

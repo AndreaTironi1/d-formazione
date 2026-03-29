@@ -53,6 +53,7 @@ export const getAllWithCoe = query({
 });
 
 const schedaFields = {
+  anno: v.optional(v.number()),
   owner: v.optional(v.string()),
   tutor: v.optional(v.string()),
   docenza: v.optional(v.string()),

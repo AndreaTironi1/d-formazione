@@ -37,6 +37,7 @@ const PRIORITY_LABEL: Record<number, string> = {
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 type CorsoInfo = {
+  tema?: string
   titolo: string
   idCorso?: string
   ambito?: string
@@ -112,7 +113,7 @@ function getCorsiOnDay(
       end.setHours(23, 59, 59, 999)
       return date >= start && date <= end
     })
-    .map(i => i.corso!)
+    .map(i => ({ ...i.corso!, tema: i.sessione?.tema }))
 }
 
 // ── Cell ─────────────────────────────────────────────────────────────────────
@@ -133,8 +134,8 @@ function GridCell({
   const first = corsi[0]
   const bg = PRIORITY_CELL_BG[first.priorita] ?? 'bg-slate-300'
   const label = corsi.length > 1
-    ? `${first.idCorso ?? first.titolo.slice(0, 6)} +${corsi.length - 1}`
-    : (first.idCorso ?? first.titolo.slice(0, 8))
+    ? `${first.tema?.slice(0, 6) ?? first.idCorso ?? first.titolo.slice(0, 6)} +${corsi.length - 1}`
+    : (first.tema?.slice(0, 8) ?? first.idCorso ?? first.titolo.slice(0, 8))
 
   return (
     <td
@@ -160,9 +161,15 @@ function GridCell({
 
 function CorsoModal({ corso, onClose }: { corso: CorsoInfo | null; onClose: () => void }) {
   return (
-    <Modal open={!!corso} onClose={onClose} title="Dettagli corso" size="md">
+    <Modal open={!!corso} onClose={onClose} title="Dettagli sessione" size="md">
       {corso && (
         <div className="space-y-4">
+          {corso.tema && (
+            <div>
+              <p className="text-xs text-slate-400 uppercase tracking-wide mb-0.5">Tema sessione</p>
+              <p className="font-semibold text-slate-900">{corso.tema}</p>
+            </div>
+          )}
           <div>
             <p className="text-xs text-slate-400 uppercase tracking-wide mb-0.5">Titolo</p>
             <p className="font-semibold text-slate-900">{corso.titolo}</p>
@@ -287,7 +294,7 @@ export default function ReportMensile() {
   const [year, setYear] = useState(defaultYear)
   const [filterCoe, setFilterCoe] = useState('')
   const [filterSede, setFilterSede] = useState('')
-  const [showLabels, setShowLabels] = useState(true)
+  const [showLabels, setShowLabels] = useState(false)
   const [selectedCorso, setSelectedCorso] = useState<CorsoInfo | null>(null)
   const printRef = useRef<HTMLDivElement>(null)
 
@@ -433,7 +440,7 @@ export default function ReportMensile() {
               onChange={e => setShowLabels(e.target.checked)}
               className="w-4 h-4 rounded accent-blue-600"
             />
-            <span className="text-sm text-slate-600">Mostra codice corso nelle celle</span>
+            <span className="text-sm text-slate-600">Mostra tema sessione nelle celle</span>
           </label>
         </div>
       </div>
@@ -498,38 +505,52 @@ export default function ReportMensile() {
             ))}
           </div>
 
-          {/* Dettaglio per dipendente (visibile a schermo e in stampa) */}
+          {/* Dettaglio sessioni per dipendente */}
           <div className="px-4 py-4 border-t border-slate-200 space-y-4">
             <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
-              Dettaglio corsi — {MONTH_NAMES[month - 1]} {year}
+              Dettaglio sessioni — {MONTH_NAMES[month - 1]} {year}
             </p>
             {filteredDipendenti.map(dip => {
-              const corsiMese = (iscrizioni ?? []).filter(i => {
+              const monthStartIso = `${year}-${String(month).padStart(2, '0')}-01`
+              const monthEndIso = `${year}-${String(month).padStart(2, '0')}-${String(daysInMonth(year, month)).padStart(2, '0')}`
+              const monthStart = new Date(year, month - 1, 1)
+              const monthEnd = new Date(year, month, 0, 23, 59, 59, 999)
+              const sessioniMese = (iscrizioni ?? []).filter(i => {
                 if (String(i.dipendenteId) !== String(dip._id)) return false
-                if (!i.corso?.dataInizio || !i.corso?.dataFine) return false
-                const start = new Date(i.corso.dataInizio)
-                const end = new Date(i.corso.dataFine)
-                const monthStart = new Date(year, month - 1, 1)
-                const monthEnd = new Date(year, month, 0, 23, 59, 59, 999)
-                return start <= monthEnd && end >= monthStart
-              }).map(i => i.corso!)
+                const sess = i.sessione
+                if (!sess) return false
+                if (sess.giorniErogazione && sess.giorniErogazione.length > 0) {
+                  return sess.giorniErogazione.some(g => g.data >= monthStartIso && g.data <= monthEndIso)
+                }
+                if (!sess.dataInizio || !sess.dataFine) return false
+                return new Date(sess.dataInizio) <= monthEnd && new Date(sess.dataFine) >= monthStart
+              })
+              if (sessioniMese.length === 0) return null
               return (
                 <div key={String(dip._id)}>
                   <p className="text-sm font-semibold text-slate-800">{dip.nome}</p>
                   <ul className="mt-1 space-y-0.5 ml-3">
-                    {corsiMese.map((c, idx) => (
-                      <li key={idx} className="text-xs text-slate-600">
-                        <span className="font-medium">{c.titolo}</span>
-                        {c.destinatari && (
-                          <span className="ml-1.5 px-1 py-0.5 rounded bg-violet-100 text-violet-700 text-[10px]">{c.destinatari}</span>
-                        )}
-                        {c.dataInizio && c.dataFine && (
-                          <span className="ml-2 text-slate-400">
-                            {c.dataInizio} → {c.dataFine}
-                          </span>
-                        )}
-                      </li>
-                    ))}
+                    {sessioniMese.map((i, idx) => {
+                      const sess = i.sessione!
+                      const corso = i.corso
+                      const giorni = sess.giorniErogazione?.filter(g => g.data >= monthStartIso && g.data <= monthEndIso) ?? []
+                      return (
+                        <li key={idx} className="text-xs text-slate-600">
+                          <span className="font-medium">{sess.tema}</span>
+                          {corso?.titolo && <span className="ml-1.5 text-slate-400">{corso.titolo}</span>}
+                          {corso?.destinatari && (
+                            <span className="ml-1.5 px-1 py-0.5 rounded bg-violet-100 text-violet-700 text-[10px]">{corso.destinatari}</span>
+                          )}
+                          {giorni.length > 0 ? (
+                            <span className="ml-2 text-slate-400">
+                              {giorni.map(g => g.data).join(', ')}
+                            </span>
+                          ) : sess.dataInizio && sess.dataFine ? (
+                            <span className="ml-2 text-slate-400">{sess.dataInizio} → {sess.dataFine}</span>
+                          ) : null}
+                        </li>
+                      )
+                    })}
                   </ul>
                 </div>
               )
