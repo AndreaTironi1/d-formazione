@@ -58,6 +58,13 @@ type CorsoInfo = {
 type IscrizioneRow = {
   _id: string
   dipendenteId: Id<'dipendenti'>
+  sessione?: {
+    tema: string
+    dataInizio?: string
+    dataFine?: string
+    giorniErogazione?: { data: string; modalita: string; oraInizio?: string; oraFine?: string }[]
+    corsoId: Id<'corsi'>
+  } | null
   corso?: CorsoInfo | null
 }
 
@@ -85,14 +92,22 @@ function getCorsiOnDay(
   month: number,
   iscrizioni: IscrizioneRow[]
 ): CorsoInfo[] {
+  const isoDay = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
   const date = new Date(year, month - 1, day)
   date.setHours(0, 0, 0, 0)
   return iscrizioni
     .filter(i => {
       if (String(i.dipendenteId) !== dipendenteId) return false
-      if (!i.corso?.dataInizio || !i.corso?.dataFine) return false
-      const start = new Date(i.corso.dataInizio)
-      const end = new Date(i.corso.dataFine)
+      if (!i.corso || !i.sessione) return false
+      const sess = i.sessione
+      // If session has explicit delivery days, check against those
+      if (sess.giorniErogazione && sess.giorniErogazione.length > 0) {
+        return sess.giorniErogazione.some(g => g.data === isoDay)
+      }
+      // Fallback: check if day falls in session window
+      if (!sess.dataInizio || !sess.dataFine) return false
+      const start = new Date(sess.dataInizio)
+      const end = new Date(sess.dataFine)
       start.setHours(0, 0, 0, 0)
       end.setHours(23, 59, 59, 999)
       return date >= start && date <= end

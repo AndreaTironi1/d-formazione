@@ -34,13 +34,19 @@ type Dipendente = {
 type Iscrizione = {
   _id: string
   dipendenteId: Id<'dipendenti'>
-  corsoId: Id<'corsi'>
+  sessioneId: Id<'sessioni'>
   dipendente?: { nome: string } | null
-  corso?: {
-    titolo: string
-    destinatari?: string
+  sessione?: {
+    tema: string
     dataInizio?: string
     dataFine?: string
+    giorniErogazione?: { data: string; modalita: string; oraInizio?: string; oraFine?: string }[]
+    corsoId: Id<'corsi'>
+  } | null
+  corso?: {
+    idCorso: string
+    titolo: string
+    destinatari?: string
     oreAula?: number
     durataOre?: number
     priorita: number
@@ -169,7 +175,7 @@ function SedeBadges({ dip }: { dip: Dipendente }) {
   return <span className="text-xs text-slate-400">—</span>
 }
 
-// Table row for a single corso
+// Table row for a single sessione enrollment
 function GanttRow({
   iscrizione,
   year,
@@ -177,6 +183,7 @@ function GanttRow({
   iscrizione: Iscrizione
   year: number
 }) {
+  const sessione = iscrizione.sessione
   const corso = iscrizione.corso
   if (!corso) return null
 
@@ -184,16 +191,26 @@ function GanttRow({
   const barColor = PRIORITY_COLORS[priorita] ?? 'bg-slate-400'
   const ore = corso.oreAula ?? corso.durataOre
 
+  const dataInizio = sessione?.dataInizio
+  const dataFine = sessione?.dataFine
+
   const bar =
-    corso.dataInizio && corso.dataFine
-      ? getGanttBar(corso.dataInizio, corso.dataFine, year)
+    dataInizio && dataFine
+      ? getGanttBar(dataInizio, dataFine, year)
       : null
+
+  const temaLabel = sessione?.tema
+    ? `${sessione.tema}`
+    : corso.titolo
 
   return (
     <tr className="border-b border-slate-100 last:border-0">
-      {/* Titolo */}
+      {/* Tema + Corso */}
       <td className="py-2 pr-3 text-sm text-slate-700 max-w-[180px]">
-        <span className="block truncate" title={corso.titolo}>{corso.titolo}</span>
+        <span className="block truncate font-medium" title={temaLabel}>{temaLabel}</span>
+        {sessione?.tema && (
+          <span className="block truncate text-xs text-slate-400" title={corso.titolo}>{corso.titolo}</span>
+        )}
       </td>
 
       {/* Destinatari */}
@@ -221,8 +238,8 @@ function GanttRow({
 
       {/* Date */}
       <td className="py-2 px-2 text-xs text-slate-400 text-center whitespace-nowrap">
-        {corso.dataInizio && corso.dataFine
-          ? `${formatDateShort(corso.dataInizio)} → ${formatDateShort(corso.dataFine)}`
+        {dataInizio && dataFine
+          ? `${formatDateShort(dataInizio)} → ${formatDateShort(dataFine)}`
           : '—'
         }
       </td>

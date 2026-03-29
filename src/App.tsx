@@ -7,6 +7,7 @@ import SediList from './pages/SediList'
 import DipendentiList from './pages/DipendentiList'
 import ServiziList from './pages/ServiziList'
 import CorsiList from './pages/CorsiList'
+import SessioniList from './pages/SessioniList'
 import IscrizioniList from './pages/IscrizioniList'
 import ImportExcel from './components/ImportExcel'
 import ExportExcel from './pages/ExportExcel'
@@ -52,6 +53,7 @@ function App() {
         <Route path="/dipendenti" element={<DipendentiList />} />
         <Route path="/servizi" element={<ServiziList />} />
         <Route path="/corsi" element={<CorsiList />} />
+        <Route path="/sessioni" element={<SessioniList />} />
         <Route path="/iscrizioni" element={<IscrizioniList />} />
         <Route path="/importa" element={<ImportExcel />} />
         <Route path="/esporta" element={<ExportExcel />} />

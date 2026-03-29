@@ -2,6 +2,29 @@ import { v } from "convex/values";
 import { mutation } from "./_generated/server";
 import { Id } from "./_generated/dataModel";
 
+export const clearAll = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const tables = [
+      "iscrizioni",
+      "dipendenti_coe",
+      "dipendenti_sedi",
+      "corsi",
+      "servizi",
+      "dipendenti",
+      "sedi",
+      "coe",
+    ] as const;
+    const counts: Record<string, number> = {};
+    for (const table of tables) {
+      const rows = await ctx.db.query(table).collect();
+      for (const r of rows) await ctx.db.delete(r._id);
+      counts[table] = rows.length;
+    }
+    return counts;
+  },
+});
+
 export const seedAll = mutation({
   args: {
     coe: v.array(

@@ -86,11 +86,29 @@ export default defineSchema({
     .index("by_sedeId", ["sedeId"])
     .index("by_dipendente_sede", ["dipendenteId", "sedeId"]),
 
+  sessioni: defineTable({
+    corsoId: v.id("corsi"),
+    tema: v.string(),
+    dataInizio: v.optional(v.string()),
+    dataFine: v.optional(v.string()),
+    nomeDocenteAula: v.optional(v.string()),
+    nomeDocenteOnboarding: v.optional(v.string()),
+    note: v.optional(v.string()),
+    giorniErogazione: v.optional(v.array(v.object({
+      data: v.string(),
+      modalita: v.union(v.literal("TOJ"), v.literal("Aula")),
+      oraInizio: v.optional(v.string()),
+      oraFine: v.optional(v.string()),
+    }))),
+  })
+    .index("by_corsoId", ["corsoId"])
+    .index("by_dataInizio", ["dataInizio"]),
+
   iscrizioni: defineTable({
     dipendenteId: v.id("dipendenti"),
-    corsoId: v.id("corsi"),
+    sessioneId: v.id("sessioni"),
   })
     .index("by_dipendenteId", ["dipendenteId"])
-    .index("by_corsoId", ["corsoId"])
-    .index("by_dipendente_corso", ["dipendenteId", "corsoId"]),
+    .index("by_sessioneId", ["sessioneId"])
+    .index("by_dipendente_sessione", ["dipendenteId", "sessioneId"]),
 });

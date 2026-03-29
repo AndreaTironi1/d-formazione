@@ -4,33 +4,33 @@ import { query, mutation } from "./_generated/server";
 export const getAll = query({
   args: {},
   handler: async (ctx) => {
-    return await ctx.db.query("iscrizioni").collect();
+    return ctx.db.query("iscrizioni").collect();
   },
 });
 
 export const getById = query({
   args: { id: v.id("iscrizioni") },
-  handler: async (ctx, args) => {
-    return await ctx.db.get(args.id);
+  handler: async (ctx, { id }) => {
+    return ctx.db.get(id);
   },
 });
 
 export const getByDipendente = query({
   args: { dipendenteId: v.id("dipendenti") },
-  handler: async (ctx, args) => {
-    return await ctx.db
+  handler: async (ctx, { dipendenteId }) => {
+    return ctx.db
       .query("iscrizioni")
-      .withIndex("by_dipendenteId", (q) => q.eq("dipendenteId", args.dipendenteId))
+      .withIndex("by_dipendenteId", (q) => q.eq("dipendenteId", dipendenteId))
       .collect();
   },
 });
 
-export const getByCorso = query({
-  args: { corsoId: v.id("corsi") },
-  handler: async (ctx, args) => {
-    return await ctx.db
+export const getBySessione = query({
+  args: { sessioneId: v.id("sessioni") },
+  handler: async (ctx, { sessioneId }) => {
+    return ctx.db
       .query("iscrizioni")
-      .withIndex("by_corsoId", (q) => q.eq("corsoId", args.corsoId))
+      .withIndex("by_sessioneId", (q) => q.eq("sessioneId", sessioneId))
       .collect();
   },
 });
@@ -39,40 +39,39 @@ export const getAllWithRelations = query({
   args: {},
   handler: async (ctx) => {
     const iscrizioni = await ctx.db.query("iscrizioni").collect();
-    const result = await Promise.all(
+    return Promise.all(
       iscrizioni.map(async (i) => {
         const dipendente = await ctx.db.get(i.dipendenteId);
-        const corso = await ctx.db.get(i.corsoId);
-        return { ...i, dipendente, corso };
+        const sessione = await ctx.db.get(i.sessioneId);
+        const corso = sessione ? await ctx.db.get(sessione.corsoId) : null;
+        return { ...i, dipendente, sessione, corso };
       })
     );
-    return result;
   },
 });
 
 export const create = mutation({
   args: {
     dipendenteId: v.id("dipendenti"),
-    corsoId: v.id("corsi"),
+    sessioneId: v.id("sessioni"),
   },
   handler: async (ctx, args) => {
-    // Check if already enrolled
     const existing = await ctx.db
       .query("iscrizioni")
-      .withIndex("by_dipendente_corso", (q) =>
-        q.eq("dipendenteId", args.dipendenteId).eq("corsoId", args.corsoId)
+      .withIndex("by_dipendente_sessione", (q) =>
+        q.eq("dipendenteId", args.dipendenteId).eq("sessioneId", args.sessioneId)
       )
       .first();
     if (existing) {
-      throw new Error("Iscrizione già esistente per questo dipendente e corso.");
+      throw new Error("Iscrizione già esistente per questo dipendente e sessione.");
     }
-    return await ctx.db.insert("iscrizioni", args);
+    return ctx.db.insert("iscrizioni", args);
   },
 });
 
 export const createBulk = mutation({
   args: {
-    corsoId: v.id("corsi"),
+    sessioneId: v.id("sessioni"),
     dipendenteIds: v.array(v.id("dipendenti")),
   },
   handler: async (ctx, args) => {
@@ -82,9 +81,15 @@ export const createBulk = mutation({
       skippedConflict: { name: string; conflictingCourse: string }[]
     } = { created: [], skippedDuplicate: [], skippedConflict: [] }
 
-    const newCorso = await ctx.db.get(args.corsoId)
-    const newStart = newCorso?.dataInizio ?? null
-    const newEnd = newCorso?.dataFine ?? null
+    const newSessione = await ctx.db.get(args.sessioneId)
+    const newCorsotitolo = newSessione
+      ? (await ctx.db.get(newSessione.corsoId))?.titolo ?? ""
+      : ""
+
+    // Determine date range / days for conflict detection
+    const newDays = newSessione?.giorniErogazione?.map(g => g.data) ?? []
+    const newStart = newSessione?.dataInizio ?? null
+    const newEnd = newSessione?.dataFine ?? null
 
     for (const dipendenteId of args.dipendenteIds) {
       const dipendente = await ctx.db.get(dipendenteId)
@@ -93,8 +98,8 @@ export const createBulk = mutation({
       // Check duplicate
       const existing = await ctx.db
         .query("iscrizioni")
-        .withIndex("by_dipendente_corso", (q) =>
-          q.eq("dipendenteId", dipendenteId).eq("corsoId", args.corsoId)
+        .withIndex("by_dipendente_sessione", (q) =>
+          q.eq("dipendenteId", dipendenteId).eq("sessioneId", args.sessioneId)
         )
         .first()
       if (existing) {
@@ -102,31 +107,43 @@ export const createBulk = mutation({
         continue
       }
 
-      // Check date conflicts (only if new corso has dates)
-      if (newStart && newEnd) {
-        const existingIscrizioni = await ctx.db
-          .query("iscrizioni")
-          .withIndex("by_dipendenteId", (q) => q.eq("dipendenteId", dipendenteId))
-          .collect()
+      // Check date conflicts
+      const existingIscrizioni = await ctx.db
+        .query("iscrizioni")
+        .withIndex("by_dipendenteId", (q) => q.eq("dipendenteId", dipendenteId))
+        .collect()
 
-        let conflict: string | null = null
-        for (const isc of existingIscrizioni) {
-          const corso = await ctx.db.get(isc.corsoId)
-          if (!corso?.dataInizio || !corso?.dataFine) continue
-          const overlaps = corso.dataInizio <= newEnd && corso.dataFine >= newStart
+      let conflict: string | null = null
+
+      for (const isc of existingIscrizioni) {
+        const sess = await ctx.db.get(isc.sessioneId)
+        if (!sess) continue
+        const corso = await ctx.db.get(sess.corsoId)
+        const label = sess.tema + (corso ? ` (${corso.titolo})` : "")
+
+        if (newDays.length > 0 && (sess.giorniErogazione?.length ?? 0) > 0) {
+          // Both sessions have explicit days: check overlap of specific dates
+          const existingDays = new Set(sess.giorniErogazione!.map(g => g.data))
+          if (newDays.some(d => existingDays.has(d))) {
+            conflict = label
+            break
+          }
+        } else if (newStart && newEnd && sess.dataInizio && sess.dataFine) {
+          // Fallback: window overlap
+          const overlaps = sess.dataInizio <= newEnd && sess.dataFine >= newStart
           if (overlaps) {
-            conflict = corso.titolo
+            conflict = label
             break
           }
         }
-
-        if (conflict) {
-          results.skippedConflict.push({ name, conflictingCourse: conflict })
-          continue
-        }
       }
 
-      await ctx.db.insert("iscrizioni", { dipendenteId, corsoId: args.corsoId })
+      if (conflict) {
+        results.skippedConflict.push({ name, conflictingCourse: conflict })
+        continue
+      }
+
+      await ctx.db.insert("iscrizioni", { dipendenteId, sessioneId: args.sessioneId })
       results.created.push(name)
     }
 
@@ -134,21 +151,9 @@ export const createBulk = mutation({
   },
 });
 
-export const update = mutation({
-  args: {
-    id: v.id("iscrizioni"),
-    dipendenteId: v.optional(v.id("dipendenti")),
-    corsoId: v.optional(v.id("corsi")),
-  },
-  handler: async (ctx, args) => {
-    const { id, ...fields } = args;
-    await ctx.db.patch(id, fields);
-  },
-});
-
 export const remove = mutation({
   args: { id: v.id("iscrizioni") },
-  handler: async (ctx, args) => {
-    await ctx.db.delete(args.id);
+  handler: async (ctx, { id }) => {
+    await ctx.db.delete(id);
   },
 });

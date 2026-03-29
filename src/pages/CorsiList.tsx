@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { useQuery, useMutation } from 'convex/react'
+import { useNavigate } from 'react-router-dom'
 import { api } from '../../convex/_generated/api'
 import { Id } from '../../convex/_generated/dataModel'
-import { Plus, Pencil, Trash2, FileText } from 'lucide-react'
+import { Plus, Pencil, Trash2, FileText, Layers } from 'lucide-react'
 import DataTable, { Column } from '../components/DataTable'
 import Modal from '../components/Modal'
 import ConfirmDialog from '../components/ConfirmDialog'
@@ -19,6 +20,7 @@ type CorsoRow = {
   priorita: number
   coeId?: Id<'coe'>
   coe?: { nome: string } | null
+  sessioniCount?: number
   // scheda
   owner?: string
   tutor?: string
@@ -138,6 +140,7 @@ function SchedaModal({ corso, onClose }: { corso: CorsoRow; onClose: () => void 
 
 // ── Main component ────────────────────────────────────────────────────────────
 export default function CorsiList() {
+  const navigate = useNavigate()
   const corsi = useQuery(api.corsi.getAllWithCoe) as CorsoRow[] | undefined
   const coeList = useQuery(api.coe.getAll)
   const createCorso = useMutation(api.corsi.create)
@@ -247,6 +250,21 @@ export default function CorsiList() {
         ),
     },
     {
+      key: 'sessioniCount',
+      label: 'Sessioni',
+      render: (row) => {
+        const n = row.sessioniCount ?? 0
+        return (
+          <span className={cn(
+            'px-2 py-0.5 rounded-full text-xs font-semibold',
+            n > 0 ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-400'
+          )}>
+            {n}
+          </span>
+        )
+      },
+    },
+    {
       key: 'priorita',
       label: 'Priorità',
       sortable: true,
@@ -311,6 +329,13 @@ export default function CorsiList() {
               title="Scheda corso"
             >
               <FileText className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => navigate(`/sessioni?corsoId=${row._id}`)}
+              className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+              title="Gestisci sessioni"
+            >
+              <Layers className="w-4 h-4" />
             </button>
             <button
               onClick={() => openEdit(row)}
@@ -522,7 +547,7 @@ export default function CorsiList() {
         open={!!deleteItem}
         onClose={() => setDeleteItem(null)}
         onConfirm={handleDelete}
-        message={`Vuoi eliminare il corso "${deleteItem?.titolo}"? Verranno eliminate anche le iscrizioni associate.`}
+        message={`Vuoi eliminare il corso "${deleteItem?.titolo}"? Verranno eliminate anche le sessioni e le iscrizioni associate.`}
         isLoading={isSubmitting}
       />
     </div>

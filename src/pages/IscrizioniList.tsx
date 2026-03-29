@@ -16,9 +16,20 @@ type IscrizioneRow = {
   _id: Id<'iscrizioni'>
   _creationTime: number
   dipendenteId: Id<'dipendenti'>
-  corsoId: Id<'corsi'>
+  sessioneId: Id<'sessioni'>
   dipendente?: { nome: string; seniority?: string } | null
+  sessione?: { tema: string; dataInizio?: string; dataFine?: string; corsoId: Id<'corsi'> } | null
   corso?: { titolo: string; priorita: number; idCorso: string; destinatari?: string } | null
+}
+
+type SessioneOption = {
+  _id: Id<'sessioni'>
+  corsoId: Id<'corsi'>
+  tema: string
+  dataInizio?: string
+  dataFine?: string
+  iscrizioniCount: number
+  corso?: { _id: Id<'corsi'>; idCorso: string; titolo: string; priorita: number; destinatari: string } | null
 }
 
 const PRIORITA_COLORS: Record<number, string> = {
@@ -29,8 +40,15 @@ const PRIORITA_COLORS: Record<number, string> = {
   5: 'bg-red-100 text-red-700',
 }
 
+function formatDate(iso?: string) {
+  if (!iso) return null
+  const [y, m, d] = iso.split('-')
+  return `${d}/${m}/${y}`
+}
+
 export default function IscrizioniList() {
   const iscrizioni = useQuery(api.iscrizioni.getAllWithRelations) as IscrizioneRow[] | undefined
+  const sessioni = useQuery(api.sessioni.getAllWithRelations) as SessioneOption[] | undefined
   const dipendenti = useQuery(api.dipendenti.getAll)
   const corsi = useQuery(api.corsi.getAll)
   const createBulkIscrizioni = useMutation(api.iscrizioni.createBulk)
@@ -39,13 +57,15 @@ export default function IscrizioniList() {
   const [modalOpen, setModalOpen] = useState(false)
   const [deleteItem, setDeleteItem] = useState<IscrizioneRow | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [bulkResult, setBulkResult] = useState<{ result: BulkResult; corsoTitolo: string; corsoDestinatari?: string } | null>(null)
+  const [bulkResult, setBulkResult] = useState<{ result: BulkResult; sessioneTema: string; corsoTitolo: string; corsoDestinatari?: string } | null>(null)
 
   const [filterDipendente, setFilterDipendente] = useState('')
   const [filterCorso, setFilterCorso] = useState('')
   const [search, setSearch] = useState('')
 
+  // Form state
   const [formCorsoId, setFormCorsoId] = useState('')
+  const [formSessioneId, setFormSessioneId] = useState('')
   const [formDipendenteIds, setFormDipendenteIds] = useState<string[]>([])
   const [formSearch, setFormSearch] = useState('')
 
@@ -61,28 +81,41 @@ export default function IscrizioniList() {
     return (dipendenti ?? []).filter((d) => d.nome.toLowerCase().includes(q))
   }, [dipendenti, formSearch])
 
+  const sessioniForCorso = useMemo(() => {
+    if (!formCorsoId) return []
+    return (sessioni ?? []).filter(s => s.corsoId === formCorsoId)
+  }, [sessioni, formCorsoId])
+
   const handleOpenModal = () => {
     setFormCorsoId('')
+    setFormSessioneId('')
     setFormDipendenteIds([])
     setFormSearch('')
     setModalOpen(true)
   }
 
+  const handleChangeCorso = (corsoId: string) => {
+    setFormCorsoId(corsoId)
+    setFormSessioneId('')
+    setFormDipendenteIds([])
+  }
+
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!formCorsoId || formDipendenteIds.length === 0) return
+    if (!formSessioneId || formDipendenteIds.length === 0) return
 
     setIsSubmitting(true)
     try {
       const result = await createBulkIscrizioni({
-        corsoId: formCorsoId as Id<'corsi'>,
+        sessioneId: formSessioneId as Id<'sessioni'>,
         dipendenteIds: formDipendenteIds as Id<'dipendenti'>[],
       })
-      const corsoFound = corsi?.find(c => c._id === formCorsoId)
-      const corsoTitolo = corsoFound?.titolo ?? formCorsoId
-      const corsoDestinatari = corsoFound?.destinatari
+      const sessioneFound = sessioni?.find(s => s._id === formSessioneId)
+      const sessioneTema = sessioneFound?.tema ?? formSessioneId
+      const corsoTitolo = sessioneFound?.corso?.titolo ?? ''
+      const corsoDestinatari = sessioneFound?.corso?.destinatari
       setModalOpen(false)
-      setBulkResult({ result, corsoTitolo, corsoDestinatari })
+      setBulkResult({ result, sessioneTema, corsoTitolo, corsoDestinatari })
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Errore durante la creazione delle iscrizioni.')
     } finally {
@@ -108,6 +141,7 @@ export default function IscrizioniList() {
       data = data.filter(
         (i) =>
           i.dipendente?.nome.toLowerCase().includes(q) ||
+          i.sessione?.tema.toLowerCase().includes(q) ||
           i.corso?.titolo.toLowerCase().includes(q) ||
           i.corso?.idCorso.toLowerCase().includes(q)
       )
@@ -116,7 +150,7 @@ export default function IscrizioniList() {
       data = data.filter((i) => i.dipendenteId === filterDipendente)
     }
     if (filterCorso) {
-      data = data.filter((i) => i.corsoId === filterCorso)
+      data = data.filter((i) => i.sessione?.corsoId === filterCorso)
     }
     return data
   }, [iscrizioni, search, filterDipendente, filterCorso])
@@ -143,7 +177,7 @@ export default function IscrizioniList() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input
               type="text"
-              placeholder="Cerca dipendente o corso..."
+              placeholder="Cerca dipendente, sessione o corso..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="input-field pl-9"
@@ -191,6 +225,7 @@ export default function IscrizioniList() {
               <tr className="border-b border-slate-200 bg-slate-50">
                 <th className="px-4 py-3 text-left font-semibold text-slate-600">Dipendente</th>
                 <th className="px-4 py-3 text-left font-semibold text-slate-600">Seniority</th>
+                <th className="px-4 py-3 text-left font-semibold text-slate-600">Tema sessione</th>
                 <th className="px-4 py-3 text-left font-semibold text-slate-600">ID Corso</th>
                 <th className="px-4 py-3 text-left font-semibold text-slate-600">Titolo Corso</th>
                 <th className="px-4 py-3 text-left font-semibold text-slate-600">Priorità</th>
@@ -200,7 +235,7 @@ export default function IscrizioniList() {
             <tbody>
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-10 text-center text-slate-400">
+                  <td colSpan={7} className="px-4 py-10 text-center text-slate-400">
                     Nessuna iscrizione trovata.
                   </td>
                 </tr>
@@ -217,6 +252,9 @@ export default function IscrizioniList() {
                     </td>
                     <td className="px-4 py-3 text-slate-600">
                       {row.dipendente?.seniority ?? <span className="text-slate-400">—</span>}
+                    </td>
+                    <td className="px-4 py-3 text-slate-700 font-medium">
+                      {row.sessione?.tema ?? <span className="text-slate-400">—</span>}
                     </td>
                     <td className="px-4 py-3 text-slate-500 font-mono text-xs">
                       {row.corso?.idCorso ?? '—'}
@@ -270,6 +308,7 @@ export default function IscrizioniList() {
         size="md"
       >
         <form onSubmit={handleCreate} className="space-y-4">
+          {/* Step 1: Select corso */}
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">
               Corso <span className="text-red-500">*</span>
@@ -277,69 +316,110 @@ export default function IscrizioniList() {
             <select
               className="input-field"
               value={formCorsoId}
-              onChange={(e) => setFormCorsoId(e.target.value)}
+              onChange={(e) => handleChangeCorso(e.target.value)}
               required
             >
               <option value="">— Seleziona corso —</option>
               {corsi?.map((c) => (
                 <option key={c._id} value={c._id}>
-                  [{c.idCorso}] {c.titolo}{c.destinatari ? ` — ${c.destinatari}` : ''}
+                  [{c.idCorso}] {c.titolo}
                 </option>
               ))}
             </select>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              Dipendenti <span className="text-red-500">*</span>
-              {formDipendenteIds.length > 0 && (
-                <span className="ml-2 text-blue-600 font-semibold">({formDipendenteIds.length} selezionati)</span>
-              )}
-            </label>
-            <div className="relative mb-2">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <input
-                type="text"
-                placeholder="Cerca dipendente..."
-                value={formSearch}
-                onChange={(e) => setFormSearch(e.target.value)}
-                className="input-field pl-9"
-              />
-            </div>
-            <div className="border border-slate-200 rounded-lg overflow-y-auto max-h-52">
-              {filteredDipendentiForm.length === 0 ? (
-                <p className="px-3 py-4 text-center text-slate-400 text-sm">Nessun dipendente trovato.</p>
+          {/* Step 2: Select sessione (appears when corso is chosen) */}
+          {formCorsoId && (
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                Sessione <span className="text-red-500">*</span>
+              </label>
+              {sessioniForCorso.length === 0 ? (
+                <p className="text-sm text-slate-400 italic py-2">
+                  Nessuna sessione disponibile per questo corso.
+                </p>
               ) : (
-                filteredDipendentiForm.map((d) => {
-                  const selected = formDipendenteIds.includes(d._id)
-                  return (
-                    <div
-                      key={d._id}
-                      onClick={() => toggleDipendente(d._id)}
-                      className={`flex items-center gap-3 px-3 py-2.5 cursor-pointer border-b border-slate-100 last:border-0 hover:bg-slate-50 transition-colors ${selected ? 'bg-blue-50' : ''}`}
-                    >
-                      <div className={`w-4 h-4 rounded flex items-center justify-center border ${selected ? 'bg-blue-600 border-blue-600' : 'border-slate-300'}`}>
-                        {selected && <Check className="w-3 h-3 text-white" />}
+                <div className="border border-slate-200 rounded-lg overflow-y-auto max-h-40">
+                  {sessioniForCorso.map((s) => {
+                    const selected = formSessioneId === s._id
+                    const start = formatDate(s.dataInizio)
+                    const end = formatDate(s.dataFine)
+                    return (
+                      <div
+                        key={s._id}
+                        onClick={() => { setFormSessioneId(s._id); setFormDipendenteIds([]) }}
+                        className={`flex items-start gap-3 px-3 py-2.5 cursor-pointer border-b border-slate-100 last:border-0 hover:bg-slate-50 transition-colors ${selected ? 'bg-blue-50' : ''}`}
+                      >
+                        <div className={`mt-0.5 w-4 h-4 rounded-full flex-shrink-0 border-2 ${selected ? 'border-blue-600 bg-blue-600' : 'border-slate-300'}`} />
+                        <div>
+                          <p className="text-sm font-medium text-slate-800">{s.tema}</p>
+                          {(start || end) && (
+                            <p className="text-xs text-slate-500">{start ?? '—'} → {end ?? '—'}</p>
+                          )}
+                        </div>
+                        <span className="ml-auto text-xs text-slate-400 flex-shrink-0">{s.iscrizioniCount} iscritti</span>
                       </div>
-                      <span className="text-sm text-slate-800">{d.nome}</span>
-                      {d.seniority && (
-                        <span className="ml-auto text-xs text-slate-400">{d.seniority}</span>
-                      )}
-                    </div>
-                  )
-                })
+                    )
+                  })}
+                </div>
               )}
             </div>
-            {formDipendenteIds.length > 0 && (
-              <button
-                type="button"
-                onClick={() => setFormDipendenteIds([])}
-                className="mt-1 text-xs text-slate-500 hover:text-red-500"
-              >
-                Deseleziona tutti
-              </button>
-            )}
-          </div>
+          )}
+
+          {/* Step 3: Select dipendenti (appears when sessione is chosen) */}
+          {formSessioneId && (
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                Dipendenti <span className="text-red-500">*</span>
+                {formDipendenteIds.length > 0 && (
+                  <span className="ml-2 text-blue-600 font-semibold">({formDipendenteIds.length} selezionati)</span>
+                )}
+              </label>
+              <div className="relative mb-2">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Cerca dipendente..."
+                  value={formSearch}
+                  onChange={(e) => setFormSearch(e.target.value)}
+                  className="input-field pl-9"
+                />
+              </div>
+              <div className="border border-slate-200 rounded-lg overflow-y-auto max-h-52">
+                {filteredDipendentiForm.length === 0 ? (
+                  <p className="px-3 py-4 text-center text-slate-400 text-sm">Nessun dipendente trovato.</p>
+                ) : (
+                  filteredDipendentiForm.map((d) => {
+                    const selected = formDipendenteIds.includes(d._id)
+                    return (
+                      <div
+                        key={d._id}
+                        onClick={() => toggleDipendente(d._id)}
+                        className={`flex items-center gap-3 px-3 py-2.5 cursor-pointer border-b border-slate-100 last:border-0 hover:bg-slate-50 transition-colors ${selected ? 'bg-blue-50' : ''}`}
+                      >
+                        <div className={`w-4 h-4 rounded flex items-center justify-center border ${selected ? 'bg-blue-600 border-blue-600' : 'border-slate-300'}`}>
+                          {selected && <Check className="w-3 h-3 text-white" />}
+                        </div>
+                        <span className="text-sm text-slate-800">{d.nome}</span>
+                        {d.seniority && (
+                          <span className="ml-auto text-xs text-slate-400">{d.seniority}</span>
+                        )}
+                      </div>
+                    )
+                  })
+                )}
+              </div>
+              {formDipendenteIds.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setFormDipendenteIds([])}
+                  className="mt-1 text-xs text-slate-500 hover:text-red-500"
+                >
+                  Deseleziona tutti
+                </button>
+              )}
+            </div>
+          )}
 
           <div className="flex gap-3 pt-2">
             <button
@@ -353,7 +433,7 @@ export default function IscrizioniList() {
             <button
               type="submit"
               className="btn-primary flex-1"
-              disabled={isSubmitting || !formCorsoId || formDipendenteIds.length === 0}
+              disabled={isSubmitting || !formSessioneId || formDipendenteIds.length === 0}
             >
               {isSubmitting
                 ? 'Creazione...'
@@ -369,7 +449,7 @@ export default function IscrizioniList() {
         open={!!deleteItem}
         onClose={() => setDeleteItem(null)}
         onConfirm={handleDelete}
-        message={`Vuoi rimuovere l'iscrizione di "${deleteItem?.dipendente?.nome}" al corso "${deleteItem?.corso?.titolo}"?`}
+        message={`Vuoi rimuovere l'iscrizione di "${deleteItem?.dipendente?.nome}" alla sessione "${deleteItem?.sessione?.tema}" (${deleteItem?.corso?.titolo ?? ''})?`}
         confirmLabel="Rimuovi"
         isLoading={isSubmitting}
       />
@@ -383,14 +463,20 @@ export default function IscrizioniList() {
       >
         {bulkResult && (
           <div className="space-y-4">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-sm text-slate-500">Corso:</span>
-              <span className="text-sm font-semibold text-slate-800">{bulkResult.corsoTitolo}</span>
-              {bulkResult.corsoDestinatari && (
-                <span className="px-1.5 py-0.5 rounded text-xs font-medium bg-violet-100 text-violet-700">
-                  {bulkResult.corsoDestinatari}
-                </span>
-              )}
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-sm text-slate-500">Sessione:</span>
+                <span className="text-sm font-semibold text-slate-800">{bulkResult.sessioneTema}</span>
+              </div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-sm text-slate-500">Corso:</span>
+                <span className="text-sm text-slate-700">{bulkResult.corsoTitolo}</span>
+                {bulkResult.corsoDestinatari && (
+                  <span className="px-1.5 py-0.5 rounded text-xs font-medium bg-violet-100 text-violet-700">
+                    {bulkResult.corsoDestinatari}
+                  </span>
+                )}
+              </div>
             </div>
 
             {bulkResult.result.created.length > 0 && (

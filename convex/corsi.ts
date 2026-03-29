@@ -39,13 +39,16 @@ export const getAllWithCoe = query({
   args: {},
   handler: async (ctx) => {
     const corsi = await ctx.db.query("corsi").collect();
-    const result = await Promise.all(
+    return Promise.all(
       corsi.map(async (c) => {
         const coe = c.coeId ? await ctx.db.get(c.coeId) : null;
-        return { ...c, coe };
+        const sessioni = await ctx.db
+          .query("sessioni")
+          .withIndex("by_corsoId", (q) => q.eq("corsoId", c._id))
+          .collect();
+        return { ...c, coe, sessioniCount: sessioni.length };
       })
     );
-    return result;
   },
 });
 
@@ -101,15 +104,20 @@ export const update = mutation({
 
 export const remove = mutation({
   args: { id: v.id("corsi") },
-  handler: async (ctx, args) => {
-    // Remove related iscrizioni first
-    const iscrizioni = await ctx.db
-      .query("iscrizioni")
-      .withIndex("by_corsoId", (q) => q.eq("corsoId", args.id))
+  handler: async (ctx, { id }) => {
+    // Cascade: sessioni → iscrizioni → corso
+    const sessioni = await ctx.db
+      .query("sessioni")
+      .withIndex("by_corsoId", (q) => q.eq("corsoId", id))
       .collect();
-    for (const i of iscrizioni) {
-      await ctx.db.delete(i._id);
+    for (const s of sessioni) {
+      const iscrizioni = await ctx.db
+        .query("iscrizioni")
+        .withIndex("by_sessioneId", (q) => q.eq("sessioneId", s._id))
+        .collect();
+      for (const i of iscrizioni) await ctx.db.delete(i._id);
+      await ctx.db.delete(s._id);
     }
-    await ctx.db.delete(args.id);
+    await ctx.db.delete(id);
   },
 });
