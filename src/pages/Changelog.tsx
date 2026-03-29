@@ -10,6 +10,32 @@ interface Release {
 
 const releases: Release[] = [
   {
+    version: '0.5.5',
+    date: '2026-03-29',
+    changes: [
+      {
+        title: 'Report Dipendenti: timeline mostra i giorni reali, non il range completo',
+        description:
+          'La barra Gantt ora mostra un segno verticale per ogni singolo giorno di erogazione inserito nella sessione, invece di colorare l\'intero intervallo tra data inizio e fine. Se la sessione non ha giorni espliciti ma solo una finestra di date, viene mostrata la barra continua come prima.',
+      },
+      {
+        title: 'Dashboard: aggiunta statistica Sessioni',
+        description:
+          'Il riquadro delle statistiche in home page mostra ora anche il numero di sessioni presenti nel sistema, tra "Corsi" e "Iscrizioni".',
+      },
+      {
+        title: 'Report Mensile: colori celle basati sugli orari reali',
+        description:
+          'Nelle celle della griglia mensile, una fascia (mattina o pomeriggio) viene colorata solo se ha orari valorizzati in quella giornata. Se un giorno è presente nella sessione ma non ha orari mattina, la metà superiore della cella rimane vuota; stessa cosa per il pomeriggio.',
+      },
+      {
+        title: 'Report Mensile: dettaglio sessioni accorpato e colonne uniformi',
+        description:
+          'Nel riquadro "Dettaglio sessioni" in fondo al report mensile, le righe della stessa sessione sono ora accorpate in un\'unica riga. I giorni del mese con i relativi orari (mattina M e pomeriggio P) sono elencati nella colonna "Giorni & Orari". Le larghezze delle colonne sono ora fisse e uniformi per tutti i dipendenti.',
+      },
+    ],
+  },
+  {
     version: '0.5.4',
     date: '2026-03-29',
     changes: [

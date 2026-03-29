@@ -121,9 +121,9 @@ function getDaySlots(
       if (!giorno) continue
       const hasM = !!(giorno.mattinaInizio || giorno.mattinaFine)
       const hasP = !!(giorno.pomeriggioInizio || giorno.pomeriggioFine)
-      const neither = !hasM && !hasP
-      if (hasM || neither) mattina = mattina ?? corso
-      if (hasP || neither) pomeriggio = pomeriggio ?? corso
+      // Colora solo la fascia che ha orari valorizzati
+      if (hasM) mattina = mattina ?? corso
+      if (hasP) pomeriggio = pomeriggio ?? corso
     } else if (sess.dataInizio && sess.dataFine) {
       const start = new Date(sess.dataInizio)
       const end = new Date(sess.dataFine)
@@ -500,7 +500,7 @@ export default function ReportMensile() {
                   {days.map(d => (
                     <th
                       key={d}
-                      className="border border-slate-200 w-7 min-w-[1.75rem] text-center font-medium text-slate-500 py-2"
+                      className="border border-slate-200 w-8 min-w-[2rem] text-center font-medium text-slate-500 py-2"
                     >
                       {d}
                     </th>
@@ -547,19 +547,6 @@ export default function ReportMensile() {
               const monthStart = new Date(year, month - 1, 1)
               const monthEnd = new Date(year, month, 0, 23, 59, 59, 999)
 
-              // Build rows: one per fascia per giorno
-              type DettaglioRow = {
-                corso: CorsoInfo | null
-                sessioneTema: string
-                fascia: 'Mattina' | 'Pomeriggio'
-                modalita: string
-                data: string
-                oraInizio?: string
-                oraFine?: string
-              }
-
-              const rows: DettaglioRow[] = []
-
               const sessioniMese = (iscrizioni ?? []).filter(i => {
                 if (String(i.dipendenteId) !== String(dip._id)) return false
                 const sess = i.sessione
@@ -571,119 +558,98 @@ export default function ReportMensile() {
                 return new Date(sess.dataInizio) <= monthEnd && new Date(sess.dataFine) >= monthStart
               })
 
-              for (const i of sessioniMese) {
-                const sess = i.sessione!
-                const corso = i.corso ?? null
-                const giorni = sess.giorniErogazione?.filter(g => g.data >= monthStartIso && g.data <= monthEndIso) ?? []
-
-                if (giorni.length > 0) {
-                  for (const g of giorni) {
-                    const hasM = !!(g.mattinaInizio || g.mattinaFine || g.modalitaMattina)
-                    const hasP = !!(g.pomeriggioInizio || g.pomeriggioFine || g.modalitaPomeriggio)
-                    if (hasM || (!hasM && !hasP)) {
-                      rows.push({
-                        corso, sessioneTema: sess.tema,
-                        fascia: 'Mattina',
-                        modalita: g.modalitaMattina ?? '—',
-                        data: g.data,
-                        oraInizio: g.mattinaInizio,
-                        oraFine: g.mattinaFine,
-                      })
-                    }
-                    if (hasP || (!hasM && !hasP)) {
-                      rows.push({
-                        corso, sessioneTema: sess.tema,
-                        fascia: 'Pomeriggio',
-                        modalita: g.modalitaPomeriggio ?? '—',
-                        data: g.data,
-                        oraInizio: g.pomeriggioInizio,
-                        oraFine: g.pomeriggioFine,
-                      })
-                    }
-                  }
-                } else {
-                  // fallback: window only, no fascia detail
-                  rows.push({
-                    corso, sessioneTema: sess.tema,
-                    fascia: 'Mattina',
-                    modalita: '—',
-                    data: sess.dataInizio && sess.dataFine
-                      ? `${formatDate(sess.dataInizio)} → ${formatDate(sess.dataFine)}`
-                      : '—',
-                  })
-                }
-              }
-
-              if (rows.length === 0) return null
-
-              // Sort by data then fascia
-              rows.sort((a, b) => {
-                if (a.data < b.data) return -1
-                if (a.data > b.data) return 1
-                return a.fascia === 'Mattina' ? -1 : 1
-              })
+              if (sessioniMese.length === 0) return null
 
               return (
                 <div key={String(dip._id)}>
                   <p className="text-sm font-semibold text-slate-800 mb-2">{dip.nome}</p>
-                  <table className="w-full text-xs border-collapse">
+                  <table className="w-full text-xs border-collapse table-fixed">
+                    <colgroup>
+                      <col style={{ width: '22%' }} />
+                      <col style={{ width: '16%' }} />
+                      <col style={{ width: '6%' }} />
+                      <col style={{ width: '10%' }} />
+                      <col style={{ width: '46%' }} />
+                    </colgroup>
                     <thead>
                       <tr className="bg-slate-50 text-left">
                         <th className="border border-slate-200 px-2 py-1 font-semibold text-slate-600">Corso</th>
                         <th className="border border-slate-200 px-2 py-1 font-semibold text-slate-600">Sessione</th>
                         <th className="border border-slate-200 px-2 py-1 font-semibold text-slate-600">Livello</th>
                         <th className="border border-slate-200 px-2 py-1 font-semibold text-slate-600">Destinatari</th>
-                        <th className="border border-slate-200 px-2 py-1 font-semibold text-slate-600">Fascia</th>
-                        <th className="border border-slate-200 px-2 py-1 font-semibold text-slate-600">TOJ/Aula</th>
-                        <th className="border border-slate-200 px-2 py-1 font-semibold text-slate-600">Data</th>
-                        <th className="border border-slate-200 px-2 py-1 font-semibold text-slate-600">Orari</th>
+                        <th className="border border-slate-200 px-2 py-1 font-semibold text-slate-600">Giorni & Orari</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {rows.map((row, ridx) => (
-                        <tr key={ridx} className={ridx % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}>
-                          <td className="border border-slate-200 px-2 py-1 text-slate-700">
-                            {row.corso?.idCorso
-                              ? <span className="font-mono text-[10px] mr-1 text-slate-400">[{row.corso.idCorso}]</span>
-                              : null}
-                            {row.corso?.titolo ?? '—'}
-                          </td>
-                          <td className="border border-slate-200 px-2 py-1 font-medium text-slate-800">
-                            {row.sessioneTema}
-                          </td>
-                          <td className="border border-slate-200 px-2 py-1">
-                            {row.corso?.priorita != null ? (
-                              <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold border ${PRIORITY_BADGE[row.corso.priorita] ?? ''}`}>
-                                P{row.corso.priorita}
-                              </span>
-                            ) : '—'}
-                          </td>
-                          <td className="border border-slate-200 px-2 py-1 text-slate-600">
-                            {row.corso?.destinatari ?? '—'}
-                          </td>
-                          <td className="border border-slate-200 px-2 py-1 text-slate-600">
-                            {row.fascia}
-                          </td>
-                          <td className="border border-slate-200 px-2 py-1 font-medium">
-                            <span className={row.modalita === 'TOJ'
-                              ? 'text-violet-700'
-                              : row.modalita === 'Aula'
-                                ? 'text-blue-700'
-                                : 'text-slate-400'}
-                            >
-                              {row.modalita}
-                            </span>
-                          </td>
-                          <td className="border border-slate-200 px-2 py-1 font-mono text-slate-600 whitespace-nowrap">
-                            {row.data.length === 10 ? formatDate(row.data) : row.data}
-                          </td>
-                          <td className="border border-slate-200 px-2 py-1 font-mono text-slate-600 whitespace-nowrap">
-                            {row.oraInizio || row.oraFine
-                              ? `${row.oraInizio ?? '—'} → ${row.oraFine ?? '—'}`
-                              : '—'}
-                          </td>
-                        </tr>
-                      ))}
+                      {sessioniMese.map((i, ridx) => {
+                        const sess = i.sessione!
+                        const corso = i.corso ?? null
+                        const giorni = sess.giorniErogazione?.filter(g => g.data >= monthStartIso && g.data <= monthEndIso) ?? []
+                        return (
+                          <tr key={ridx} className={ridx % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}>
+                            {/* Corso */}
+                            <td className="border border-slate-200 px-2 py-1 text-slate-700">
+                              {corso?.idCorso && (
+                                <span className="font-mono text-[10px] text-slate-400 block">[{corso.idCorso}]</span>
+                              )}
+                              <span className="block truncate">{corso?.titolo ?? '—'}</span>
+                            </td>
+                            {/* Sessione */}
+                            <td className="border border-slate-200 px-2 py-1 font-medium text-slate-800 truncate">
+                              {sess.tema}
+                            </td>
+                            {/* Livello */}
+                            <td className="border border-slate-200 px-2 py-1 text-center">
+                              {corso?.priorita != null ? (
+                                <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold border ${PRIORITY_BADGE[corso.priorita] ?? ''}`}>
+                                  P{corso.priorita}
+                                </span>
+                              ) : '—'}
+                            </td>
+                            {/* Destinatari */}
+                            <td className="border border-slate-200 px-2 py-1 text-slate-600 truncate">
+                              {corso?.destinatari ?? '—'}
+                            </td>
+                            {/* Giorni & Orari — accorpati in una cella */}
+                            <td className="border border-slate-200 px-2 py-1">
+                              {giorni.length > 0 ? (
+                                <div className="space-y-0.5">
+                                  {giorni.map((g, gi) => {
+                                    const hasM = !!(g.mattinaInizio || g.mattinaFine)
+                                    const hasP = !!(g.pomeriggioInizio || g.pomeriggioFine)
+                                    return (
+                                      <div key={gi} className="flex items-start gap-2 flex-wrap">
+                                        <span className="font-mono font-medium text-slate-600 shrink-0">{formatDate(g.data)}</span>
+                                        {hasM && (
+                                          <span className="shrink-0">
+                                            <span className="text-blue-600 font-medium">M</span>
+                                            {g.modalitaMattina && <span className="ml-0.5 text-slate-400">[{g.modalitaMattina}]</span>}
+                                            <span className="font-mono ml-1 text-slate-600">{g.mattinaInizio ?? '?'}→{g.mattinaFine ?? '?'}</span>
+                                          </span>
+                                        )}
+                                        {hasP && (
+                                          <span className="shrink-0">
+                                            <span className="text-violet-600 font-medium">P</span>
+                                            {g.modalitaPomeriggio && <span className="ml-0.5 text-slate-400">[{g.modalitaPomeriggio}]</span>}
+                                            <span className="font-mono ml-1 text-slate-600">{g.pomeriggioInizio ?? '?'}→{g.pomeriggioFine ?? '?'}</span>
+                                          </span>
+                                        )}
+                                        {!hasM && !hasP && (
+                                          <span className="text-slate-300">—</span>
+                                        )}
+                                      </div>
+                                    )
+                                  })}
+                                </div>
+                              ) : sess.dataInizio && sess.dataFine ? (
+                                <span className="font-mono text-slate-600">
+                                  {formatDate(sess.dataInizio)} → {formatDate(sess.dataFine)}
+                                </span>
+                              ) : '—'}
+                            </td>
+                          </tr>
+                        )
+                      })}
                     </tbody>
                   </table>
                 </div>

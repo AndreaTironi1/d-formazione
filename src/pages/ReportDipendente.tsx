@@ -103,7 +103,6 @@ function getGanttBar(
   const start = new Date(dataInizio).getTime()
   const end = new Date(dataFine).getTime()
 
-  // Completely outside year
   if (end < yearStart || start > yearEnd) return null
 
   const clampedStart = Math.max(start, yearStart)
@@ -113,6 +112,20 @@ function getGanttBar(
   const width = ((clampedEnd - clampedStart) / total) * 100
 
   return { left: Math.max(0, left), width: Math.max(0.5, width) }
+}
+
+/** Returns left% positions for individual day ticks */
+function getGanttDays(giorni: string[], year: number): number[] {
+  const yearStart = new Date(year, 0, 1).getTime()
+  const yearEnd = new Date(year, 11, 31, 23, 59, 59, 999).getTime()
+  const total = daysInYear(year) * 24 * 60 * 60 * 1000
+  return giorni
+    .map(d => {
+      const t = new Date(d).getTime()
+      if (t < yearStart || t > yearEnd) return null
+      return ((t - yearStart) / total) * 100
+    })
+    .filter((x): x is number => x !== null)
 }
 
 // ── Sub-components ───────────────────────────────────────────────────────────
@@ -191,17 +204,19 @@ function GanttRow({
   const barColor = PRIORITY_COLORS[priorita] ?? 'bg-slate-400'
   const ore = corso?.oreAula ?? corso?.durataOre
 
-  // Deriva le date dalla finestra sessione o, se assente, dal primo/ultimo giorno di erogazione
+  // Giorni espliciti → tick individuali; altrimenti usa finestra sessione come barra continua
   const sortedGiorni = sessione?.giorniErogazione
     ? [...sessione.giorniErogazione].sort((a, b) => a.data.localeCompare(b.data))
     : undefined
   const dataInizio = sessione?.dataInizio ?? sortedGiorni?.[0]?.data
   const dataFine = sessione?.dataFine ?? sortedGiorni?.[sortedGiorni.length - 1]?.data
 
-  const bar =
-    dataInizio && dataFine
-      ? getGanttBar(dataInizio, dataFine, year)
-      : null
+  const dayTicks = sortedGiorni && sortedGiorni.length > 0
+    ? getGanttDays(sortedGiorni.map(g => g.data), year)
+    : []
+  const bar = dayTicks.length === 0 && dataInizio && dataFine
+    ? getGanttBar(dataInizio, dataFine, year)
+    : null
 
   const temaLabel = sessione?.tema ?? corso?.titolo ?? '—'
 
@@ -273,7 +288,16 @@ function GanttRow({
       {/* Gantt bar */}
       <td className="py-2 pl-2 w-full min-w-[200px]">
         <div className="relative h-4 bg-slate-100 rounded overflow-hidden">
-          {bar ? (
+          {dayTicks.length > 0 ? (
+            dayTicks.map((left, i) => (
+              <div
+                key={i}
+                className={cn('absolute top-0 h-full opacity-90', barColor)}
+                style={{ left: `${left}%`, width: '1.5%', minWidth: '4px' }}
+                title={sortedGiorni![i]?.data ?? ''}
+              />
+            ))
+          ) : bar ? (
             <div
               className={cn('absolute top-0 h-full rounded opacity-80', barColor)}
               style={{ left: `${bar.left}%`, width: `${bar.width}%` }}

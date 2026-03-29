@@ -1,6 +1,6 @@
 import { useQuery } from 'convex/react'
 import { api } from '../../convex/_generated/api'
-import { Building2, MapPin, Users, Briefcase, BookOpen, ClipboardList } from 'lucide-react'
+import { Building2, MapPin, Users, Briefcase, BookOpen, Layers, ClipboardList } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
 interface StatCardProps {
@@ -36,6 +36,7 @@ export default function Dashboard() {
   const dipendenti = useQuery(api.dipendenti.getAll)
   const servizi = useQuery(api.servizi.getAll)
   const corsi = useQuery(api.corsi.getAll)
+  const sessioni = useQuery(api.sessioni.getAll)
   const iscrizioni = useQuery(api.iscrizioni.getAll)
 
   const stats = [
@@ -44,6 +45,7 @@ export default function Dashboard() {
     { label: 'Dipendenti', count: dipendenti?.length, icon: Users, to: '/dipendenti', color: 'text-green-600', bgColor: 'bg-green-50' },
     { label: 'Servizi', count: servizi?.length, icon: Briefcase, to: '/servizi', color: 'text-amber-600', bgColor: 'bg-amber-50' },
     { label: 'Corsi', count: corsi?.length, icon: BookOpen, to: '/corsi', color: 'text-rose-600', bgColor: 'bg-rose-50' },
+    { label: 'Sessioni', count: sessioni?.length, icon: Layers, to: '/sessioni', color: 'text-indigo-600', bgColor: 'bg-indigo-50' },
     { label: 'Iscrizioni', count: iscrizioni?.length, icon: ClipboardList, to: '/iscrizioni', color: 'text-teal-600', bgColor: 'bg-teal-50' },
   ]
 
@@ -55,7 +57,7 @@ export default function Dashboard() {
       </div>
 
       {/* Stats grid */}
-      <div className="grid grid-cols-6 gap-4">
+      <div className="grid grid-cols-7 gap-4">
         {stats.map((s) => <StatCard key={s.label} {...s} />)}
       </div>
 
