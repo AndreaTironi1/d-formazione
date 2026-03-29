@@ -251,11 +251,11 @@ function GanttRow({
             <div
               className={cn('absolute top-0 h-full rounded opacity-80', barColor)}
               style={{ left: `${bar.left}%`, width: `${bar.width}%` }}
-              title={`${corso.dataInizio} → ${corso.dataFine}`}
+              title={`${dataInizio} → ${dataFine}`}
             />
           ) : (
             <span className="absolute inset-0 flex items-center justify-center text-xs text-slate-400">
-              {corso.dataInizio ? 'fuori anno' : '—'}
+              {dataInizio ? 'fuori anno' : '—'}
             </span>
           )}
         </div>
