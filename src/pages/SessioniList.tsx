@@ -91,6 +91,7 @@ export default function SessioniList() {
   const [activeTab, setActiveTab] = useState<'info' | 'giorni'>('info')
   const [filterCorsoId, setFilterCorsoId] = useState<string>(preCorsoId)
   const [formData, setFormData] = useState<FormData>(emptyForm)
+  const [giornoError, setGiornoError] = useState<string | null>(null)
 
   const set = (k: keyof Omit<FormData, 'giorniErogazione'>) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
@@ -100,6 +101,7 @@ export default function SessioniList() {
     setEditItem(null)
     setFormData({ ...emptyForm, corsoId: filterCorsoId })
     setActiveTab('info')
+    setGiornoError(null)
     setModalOpen(true)
   }
 
@@ -107,6 +109,7 @@ export default function SessioniList() {
     setEditItem(item)
     setFormData(formFromRow(item))
     setActiveTab('info')
+    setGiornoError(null)
     setModalOpen(true)
   }
 
@@ -117,12 +120,22 @@ export default function SessioniList() {
   const removeGiorno = (idx: number) =>
     setFormData((f) => ({ ...f, giorniErogazione: f.giorniErogazione.filter((_, i) => i !== idx) }))
 
+  const isOutOfRange = (data: string, f: FormData) =>
+    !!f.dataInizio && !!f.dataFine && !!data &&
+    (data < f.dataInizio || data > f.dataFine)
+
   const setGiorno = (idx: number, field: keyof GiornoErogazione, value: string) =>
     setFormData((f) => {
       const giorni = f.giorniErogazione.map((g, i) =>
         i === idx ? { ...g, [field]: value } : g
       )
-      return { ...f, giorniErogazione: giorni }
+      const updated = { ...f, giorniErogazione: giorni }
+      const fuori = giorni.filter(g => g.data && isOutOfRange(g.data, updated))
+      setGiornoError(fuori.length > 0
+        ? `${fuori.length} giorno/i fuori dalla finestra ${updated.dataInizio} → ${updated.dataFine}`
+        : null
+      )
+      return updated
     })
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -139,6 +152,22 @@ export default function SessioniList() {
           oraInizio: g.oraInizio || undefined,
           oraFine: g.oraFine || undefined,
         }))
+
+      if (formData.dataInizio && formData.dataFine && giorniClean.length > 0) {
+        const fuoriRange = giorniClean.filter(
+          g => g.data < formData.dataInizio || g.data > formData.dataFine
+        )
+        if (fuoriRange.length > 0) {
+          setGiornoError(
+            `${fuoriRange.length} giorno/i fuori dalla finestra ${formData.dataInizio} → ${formData.dataFine}: ` +
+            fuoriRange.map(g => g.data).join(', ')
+          )
+          setIsSubmitting(false)
+          setActiveTab('giorni')
+          return
+        }
+      }
+      setGiornoError(null)
 
       const payload = {
         corsoId: formData.corsoId as Id<'corsi'>,
@@ -421,7 +450,17 @@ export default function SessioniList() {
             <div className="space-y-3">
               <p className="text-xs text-slate-500">
                 Aggiungi i giorni effettivi di erogazione con modalità e orari.
+                {formData.dataInizio && formData.dataFine && (
+                  <span className="ml-1 text-indigo-600 font-medium">
+                    Devono essere tra {formData.dataInizio} e {formData.dataFine}.
+                  </span>
+                )}
               </p>
+              {giornoError && (
+                <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                  {giornoError}
+                </p>
+              )}
               {formData.giorniErogazione.length === 0 && (
                 <p className="text-sm text-slate-400 italic py-2">Nessun giorno aggiunto.</p>
               )}
@@ -429,7 +468,7 @@ export default function SessioniList() {
                 <div key={idx} className="flex items-center gap-2 p-3 bg-slate-50 rounded-lg">
                   <input
                     type="date"
-                    className="input-field flex-1 min-w-0"
+                    className={cn('input-field flex-1 min-w-0', isOutOfRange(g.data, formData) && 'border-red-400 ring-1 ring-red-200')}
                     value={g.data}
                     onChange={(e) => setGiorno(idx, 'data', e.target.value)}
                   />
