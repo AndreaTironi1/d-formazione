@@ -12,8 +12,10 @@ import { cn } from '../lib/utils'
 type GiornoErogazione = {
   data: string
   modalita: 'TOJ' | 'Aula'
-  oraInizio?: string
-  oraFine?: string
+  mattinaInizio?: string
+  mattinaFine?: string
+  pomeriggioInizio?: string
+  pomeriggioFine?: string
 }
 
 type SessioneRow = {
@@ -37,7 +39,7 @@ function formatDate(iso?: string) {
   return `${d}/${m}/${y}`
 }
 
-const emptyGiorno = (): GiornoErogazione => ({ data: '', modalita: 'Aula', oraInizio: '', oraFine: '' })
+const emptyGiorno = (): GiornoErogazione => ({ data: '', modalita: 'Aula', mattinaInizio: '', mattinaFine: '', pomeriggioInizio: '', pomeriggioFine: '' })
 
 type FormData = {
   corsoId: string
@@ -70,7 +72,14 @@ function formFromRow(row: SessioneRow): FormData {
     nomeDocenteAula: row.nomeDocenteAula ?? '',
     nomeDocenteOnboarding: row.nomeDocenteOnboarding ?? '',
     note: row.note ?? '',
-    giorniErogazione: row.giorniErogazione ? row.giorniErogazione.map(g => ({ ...g })) : [],
+    giorniErogazione: row.giorniErogazione ? row.giorniErogazione.map(g => ({
+      data: g.data,
+      modalita: g.modalita,
+      mattinaInizio: g.mattinaInizio ?? '',
+      mattinaFine: g.mattinaFine ?? '',
+      pomeriggioInizio: g.pomeriggioInizio ?? '',
+      pomeriggioFine: g.pomeriggioFine ?? '',
+    })) : [],
   }
 }
 
@@ -149,8 +158,10 @@ export default function SessioniList() {
         .map(g => ({
           data: g.data,
           modalita: g.modalita,
-          oraInizio: g.oraInizio || undefined,
-          oraFine: g.oraFine || undefined,
+          mattinaInizio: g.mattinaInizio || undefined,
+          mattinaFine: g.mattinaFine || undefined,
+          pomeriggioInizio: g.pomeriggioInizio || undefined,
+          pomeriggioFine: g.pomeriggioFine || undefined,
         }))
 
       if (formData.dataInizio && formData.dataFine && giorniClean.length > 0) {
@@ -465,42 +476,68 @@ export default function SessioniList() {
                 <p className="text-sm text-slate-400 italic py-2">Nessun giorno aggiunto.</p>
               )}
               {formData.giorniErogazione.map((g, idx) => (
-                <div key={idx} className="flex items-center gap-2 p-3 bg-slate-50 rounded-lg">
-                  <input
-                    type="date"
-                    className={cn('input-field flex-1 min-w-0', isOutOfRange(g.data, formData) && 'border-red-400 ring-1 ring-red-200')}
-                    value={g.data}
-                    onChange={(e) => setGiorno(idx, 'data', e.target.value)}
-                  />
-                  <select
-                    className="input-field w-28"
-                    value={g.modalita}
-                    onChange={(e) => setGiorno(idx, 'modalita', e.target.value)}
-                  >
-                    <option value="Aula">Aula</option>
-                    <option value="TOJ">TOJ</option>
-                  </select>
-                  <input
-                    type="time"
-                    className="input-field w-28"
-                    value={g.oraInizio ?? ''}
-                    onChange={(e) => setGiorno(idx, 'oraInizio', e.target.value)}
-                    placeholder="Inizio"
-                  />
-                  <input
-                    type="time"
-                    className="input-field w-28"
-                    value={g.oraFine ?? ''}
-                    onChange={(e) => setGiorno(idx, 'oraFine', e.target.value)}
-                    placeholder="Fine"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => removeGiorno(idx)}
-                    className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
+                <div key={idx} className="p-3 bg-slate-50 rounded-lg space-y-2">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="date"
+                      className={cn('input-field flex-1 min-w-0', isOutOfRange(g.data, formData) && 'border-red-400 ring-1 ring-red-200')}
+                      value={g.data}
+                      onChange={(e) => setGiorno(idx, 'data', e.target.value)}
+                    />
+                    <select
+                      className="input-field w-28"
+                      value={g.modalita}
+                      onChange={(e) => setGiorno(idx, 'modalita', e.target.value)}
+                    >
+                      <option value="Aula">Aula</option>
+                      <option value="TOJ">TOJ</option>
+                    </select>
+                    <button
+                      type="button"
+                      onClick={() => removeGiorno(idx)}
+                      className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 pl-1">
+                    <div>
+                      <span className="text-xs text-slate-400 font-medium">Mattina</span>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <input
+                          type="time"
+                          className="input-field flex-1 min-w-0"
+                          value={g.mattinaInizio ?? ''}
+                          onChange={(e) => setGiorno(idx, 'mattinaInizio', e.target.value)}
+                        />
+                        <span className="text-slate-400 text-xs flex-shrink-0">→</span>
+                        <input
+                          type="time"
+                          className="input-field flex-1 min-w-0"
+                          value={g.mattinaFine ?? ''}
+                          onChange={(e) => setGiorno(idx, 'mattinaFine', e.target.value)}
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <span className="text-xs text-slate-400 font-medium">Pomeriggio</span>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <input
+                          type="time"
+                          className="input-field flex-1 min-w-0"
+                          value={g.pomeriggioInizio ?? ''}
+                          onChange={(e) => setGiorno(idx, 'pomeriggioInizio', e.target.value)}
+                        />
+                        <span className="text-slate-400 text-xs flex-shrink-0">→</span>
+                        <input
+                          type="time"
+                          className="input-field flex-1 min-w-0"
+                          value={g.pomeriggioFine ?? ''}
+                          onChange={(e) => setGiorno(idx, 'pomeriggioFine', e.target.value)}
+                        />
+                      </div>
+                    </div>
+                  </div>
                 </div>
               ))}
               <button

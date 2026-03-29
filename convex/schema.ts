@@ -97,8 +97,10 @@ export default defineSchema({
     giorniErogazione: v.optional(v.array(v.object({
       data: v.string(),
       modalita: v.union(v.literal("TOJ"), v.literal("Aula")),
-      oraInizio: v.optional(v.string()),
-      oraFine: v.optional(v.string()),
+      mattinaInizio: v.optional(v.string()),
+      mattinaFine: v.optional(v.string()),
+      pomeriggioInizio: v.optional(v.string()),
+      pomeriggioFine: v.optional(v.string()),
     }))),
   })
     .index("by_corsoId", ["corsoId"])

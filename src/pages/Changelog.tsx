@@ -10,6 +10,43 @@ interface Release {
 
 const releases: Release[] = [
   {
+    version: '0.5.0',
+    date: '2026-03-29',
+    label: 'Sessioni di formazione',
+    changes: [
+      {
+        title: 'Sessioni: livello intermedio tra corsi e iscrizioni',
+        description:
+          'Ogni corso può ora avere più sessioni (es. "Prompting avanzato" come sessione del corso "AI"). Ogni sessione ha un proprio tema, una finestra di date (inizio e fine), docenti e note. I dipendenti si iscrivono alla singola sessione, non più al corso generico.',
+      },
+      {
+        title: 'Giorni di erogazione con orari mattina e pomeriggio',
+        description:
+          'Per ogni sessione è possibile aggiungere i giorni esatti di svolgimento, indicando la modalità (Aula o TOJ) e gli orari separati per mattina e pomeriggio. Un controllo automatico segnala subito se un giorno inserito cade fuori dalla finestra della sessione.',
+      },
+      {
+        title: 'Iscrizioni: si seleziona direttamente la sessione',
+        description:
+          'Il modulo per creare una nuova iscrizione mostra ora direttamente l\'elenco delle sessioni disponibili (con tema e titolo del corso), eliminando il passaggio intermedio di scelta del corso.',
+      },
+      {
+        title: 'Report Dipendenti: date e orari reali nel piano formativo',
+        description:
+          'Nella scheda di ogni dipendente, la colonna "Date" mostra ora i giorni effettivi di erogazione con la modalità (Aula/TOJ) e gli orari mattina/pomeriggio. Se i giorni non sono ancora definiti, viene mostrata la finestra di date della sessione.',
+      },
+      {
+        title: 'Report Mensile: aggiornato per le sessioni',
+        description:
+          'La griglia mensile ora si basa sulle sessioni e sui loro giorni di erogazione: un dipendente appare nel mese solo se ha effettivamente una sessione in quel periodo.',
+      },
+      {
+        title: 'Cancella dati: reset completo con doppia conferma',
+        description:
+          'Nella sezione Utilità è disponibile la nuova pagina "Cancella dati". Per evitare cancellazioni accidentali, l\'operazione richiede di confermare l\'intenzione digitando una frase specifica. Al termine viene mostrato il riepilogo di quanti record sono stati eliminati per ogni tabella.',
+      },
+    ],
+  },
+  {
     version: '0.4.5',
     date: '2026-03-21',
     changes: [

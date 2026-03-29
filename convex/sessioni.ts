@@ -4,8 +4,10 @@ import { mutation, query } from "./_generated/server";
 const giornoDef = v.object({
   data: v.string(),
   modalita: v.union(v.literal("TOJ"), v.literal("Aula")),
-  oraInizio: v.optional(v.string()),
-  oraFine: v.optional(v.string()),
+  mattinaInizio: v.optional(v.string()),
+  mattinaFine: v.optional(v.string()),
+  pomeriggioInizio: v.optional(v.string()),
+  pomeriggioFine: v.optional(v.string()),
 });
 
 export const getAll = query({

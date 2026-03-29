@@ -62,7 +62,7 @@ type IscrizioneRow = {
     tema: string
     dataInizio?: string
     dataFine?: string
-    giorniErogazione?: { data: string; modalita: string; oraInizio?: string; oraFine?: string }[]
+    giorniErogazione?: { data: string; modalita: string; mattinaInizio?: string; mattinaFine?: string; pomeriggioInizio?: string; pomeriggioFine?: string }[]
     corsoId: Id<'corsi'>
   } | null
   corso?: CorsoInfo | null
@@ -337,9 +337,16 @@ export default function ReportMensile() {
       }
       return iscrizioni.some(i => {
         if (String(i.dipendenteId) !== String(d._id)) return false
-        if (!i.corso?.dataInizio || !i.corso?.dataFine) return false
-        const start = new Date(i.corso.dataInizio)
-        const end = new Date(i.corso.dataFine)
+        const sess = i.sessione
+        if (!sess) return false
+        if (sess.giorniErogazione && sess.giorniErogazione.length > 0) {
+          const monthStartIso = `${year}-${String(month).padStart(2, '0')}-01`
+          const monthEndIso = `${year}-${String(month).padStart(2, '0')}-${String(daysInMonth(year, month)).padStart(2, '0')}`
+          return sess.giorniErogazione.some(g => g.data >= monthStartIso && g.data <= monthEndIso)
+        }
+        if (!sess.dataInizio || !sess.dataFine) return false
+        const start = new Date(sess.dataInizio)
+        const end = new Date(sess.dataFine)
         return start <= monthEnd && end >= monthStart
       })
     })
@@ -354,7 +361,7 @@ export default function ReportMensile() {
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Report Mensile</h1>
           <p className="text-slate-500 text-sm mt-1">
-            Visualizza i corsi per dipendente giorno per giorno.
+            Visualizza le sessioni per dipendente giorno per giorno.
           </p>
         </div>
         <button
