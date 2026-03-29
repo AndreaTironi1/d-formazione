@@ -40,7 +40,7 @@ type Iscrizione = {
     tema: string
     dataInizio?: string
     dataFine?: string
-    giorniErogazione?: { data: string; modalita: string; mattinaInizio?: string; mattinaFine?: string; pomeriggioInizio?: string; pomeriggioFine?: string }[]
+    giorniErogazione?: { data: string; modalitaMattina?: string; mattinaInizio?: string; mattinaFine?: string; modalitaPomeriggio?: string; pomeriggioInizio?: string; pomeriggioFine?: string }[]
     corsoId: Id<'corsi'>
   } | null
   corso?: {
@@ -239,16 +239,24 @@ function GanttRow({
       {/* Date */}
       <td className="py-2 px-2 text-xs text-slate-400 align-top">
         {sessione?.giorniErogazione && sessione.giorniErogazione.length > 0 ? (
-          <div className="space-y-0.5">
+          <div className="space-y-1">
             {sessione.giorniErogazione.map((g, i) => (
-              <div key={i} className="whitespace-nowrap">
+              <div key={i}>
                 <span className="font-medium text-slate-600">{formatDateShort(g.data)}</span>
-                <span className="ml-1 text-slate-400">{g.modalita}</span>
                 {(g.mattinaInizio || g.mattinaFine) && (
-                  <span className="ml-1">M:{g.mattinaInizio ?? ''}→{g.mattinaFine ?? ''}</span>
+                  <span className="ml-1 whitespace-nowrap">
+                    {g.modalitaMattina && <span className="text-indigo-500">{g.modalitaMattina} </span>}
+                    M:{g.mattinaInizio ?? ''}→{g.mattinaFine ?? ''}
+                  </span>
                 )}
                 {(g.pomeriggioInizio || g.pomeriggioFine) && (
-                  <span className="ml-1">P:{g.pomeriggioInizio ?? ''}→{g.pomeriggioFine ?? ''}</span>
+                  <span className="ml-1 whitespace-nowrap">
+                    {g.modalitaPomeriggio && <span className="text-indigo-500">{g.modalitaPomeriggio} </span>}
+                    P:{g.pomeriggioInizio ?? ''}→{g.pomeriggioFine ?? ''}
+                  </span>
+                )}
+                {!g.mattinaInizio && !g.mattinaFine && !g.pomeriggioInizio && !g.pomeriggioFine && (
+                  <span className="ml-1 text-slate-300">—</span>
                 )}
               </div>
             ))}

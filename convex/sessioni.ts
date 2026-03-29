@@ -3,9 +3,10 @@ import { mutation, query } from "./_generated/server";
 
 const giornoDef = v.object({
   data: v.string(),
-  modalita: v.union(v.literal("TOJ"), v.literal("Aula")),
+  modalitaMattina: v.optional(v.union(v.literal("TOJ"), v.literal("Aula"))),
   mattinaInizio: v.optional(v.string()),
   mattinaFine: v.optional(v.string()),
+  modalitaPomeriggio: v.optional(v.union(v.literal("TOJ"), v.literal("Aula"))),
   pomeriggioInizio: v.optional(v.string()),
   pomeriggioFine: v.optional(v.string()),
 });

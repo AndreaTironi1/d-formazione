@@ -62,7 +62,7 @@ type IscrizioneRow = {
     tema: string
     dataInizio?: string
     dataFine?: string
-    giorniErogazione?: { data: string; modalita: string; mattinaInizio?: string; mattinaFine?: string; pomeriggioInizio?: string; pomeriggioFine?: string }[]
+    giorniErogazione?: { data: string; modalitaMattina?: string; mattinaInizio?: string; mattinaFine?: string; modalitaPomeriggio?: string; pomeriggioInizio?: string; pomeriggioFine?: string }[]
     corsoId: Id<'corsi'>
   } | null
   corso?: CorsoInfo | null
