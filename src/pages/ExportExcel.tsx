@@ -58,7 +58,28 @@ type Corso = {
 type Iscrizione = {
   _id: string
   dipendente?: { nome: string } | null
-  corso?: { titolo: string } | null
+  sessione?: { tema: string; corsoId: string } | null
+  corso?: { idCorso?: string; titolo: string } | null
+}
+
+type Sessione = {
+  _id: string
+  tema: string
+  dataInizio?: string
+  dataFine?: string
+  nomeDocenteAula?: string
+  nomeDocenteOnboarding?: string
+  note?: string
+  giorniErogazione?: {
+    data: string
+    modalitaMattina?: string
+    mattinaInizio?: string
+    mattinaFine?: string
+    modalitaPomeriggio?: string
+    pomeriggioInizio?: string
+    pomeriggioFine?: string
+  }[]
+  corso?: { idCorso?: string; titolo: string } | null
 }
 
 export default function ExportExcel() {
@@ -67,6 +88,7 @@ export default function ExportExcel() {
   const dipendenti = useQuery(api.dipendenti.getAllWithRelations) as Dipendente[] | undefined
   const servizi = useQuery(api.servizi.getAll) as Servizio[] | undefined
   const corsi = useQuery(api.corsi.getAllWithCoe) as Corso[] | undefined
+  const sessioni = useQuery(api.sessioni.getAllWithRelations) as Sessione[] | undefined
   const iscrizioni = useQuery(api.iscrizioni.getAllWithRelations) as Iscrizione[] | undefined
 
   const isLoading =
@@ -75,6 +97,7 @@ export default function ExportExcel() {
     dipendenti === undefined ||
     servizi === undefined ||
     corsi === undefined ||
+    sessioni === undefined ||
     iscrizioni === undefined
 
   const handleExport = () => {
@@ -137,10 +160,52 @@ export default function ExportExcel() {
     }))
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(corsiData), 'Corsi')
 
+    // Foglio Sessioni (una riga per giorno di erogazione; se nessun giorno, una riga sola)
+    const sessioniData: Record<string, string>[] = []
+    for (const s of sessioni) {
+      const base = {
+        'ID Corso': s.corso?.idCorso ?? '',
+        'Titolo Corso': s.corso?.titolo ?? '',
+        'Tema Sessione': s.tema,
+        'Data Inizio': s.dataInizio ?? '',
+        'Data Fine': s.dataFine ?? '',
+        'Docente Aula': s.nomeDocenteAula ?? '',
+        'Docente Onboarding': s.nomeDocenteOnboarding ?? '',
+        'Note': s.note ?? '',
+      }
+      if (s.giorniErogazione && s.giorniErogazione.length > 0) {
+        for (const g of s.giorniErogazione) {
+          sessioniData.push({
+            ...base,
+            'Data Giorno': g.data,
+            'Modalità Mattina': g.modalitaMattina ?? '',
+            'Mattina Inizio': g.mattinaInizio ?? '',
+            'Mattina Fine': g.mattinaFine ?? '',
+            'Modalità Pomeriggio': g.modalitaPomeriggio ?? '',
+            'Pomeriggio Inizio': g.pomeriggioInizio ?? '',
+            'Pomeriggio Fine': g.pomeriggioFine ?? '',
+          })
+        }
+      } else {
+        sessioniData.push({
+          ...base,
+          'Data Giorno': '',
+          'Modalità Mattina': '',
+          'Mattina Inizio': '',
+          'Mattina Fine': '',
+          'Modalità Pomeriggio': '',
+          'Pomeriggio Inizio': '',
+          'Pomeriggio Fine': '',
+        })
+      }
+    }
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(sessioniData), 'Sessioni')
+
     // Foglio Iscrizioni
     const iscrizioniData = iscrizioni.map((i) => ({
       Dipendente: i.dipendente?.nome ?? '',
-      Corso: i.corso?.titolo ?? '',
+      'ID Corso': i.corso?.idCorso ?? '',
+      'Tema Sessione': i.sessione?.tema ?? '',
     }))
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(iscrizioniData), 'Iscrizioni')
 
@@ -166,8 +231,8 @@ export default function ExportExcel() {
             <h2 className="text-lg font-semibold text-slate-800 mb-1">Esporta tutto in Excel</h2>
             <p className="text-sm text-slate-500">
               Il file conterrà i fogli: <strong>CoE</strong>, <strong>Sedi</strong>,{' '}
-              <strong>Dipendenti</strong>, <strong>Servizi</strong>, <strong>Corsi</strong> e{' '}
-              <strong>Iscrizioni</strong>.
+              <strong>Dipendenti</strong>, <strong>Servizi</strong>, <strong>Corsi</strong>,{' '}
+              <strong>Sessioni</strong> e <strong>Iscrizioni</strong>.
             </p>
           </div>
 
@@ -214,6 +279,7 @@ export default function ExportExcel() {
                 `${dipendenti?.length ?? 0} dipendenti`,
                 `${servizi?.length ?? 0} servizi`,
                 `${corsi?.length ?? 0} corsi`,
+                `${sessioni?.length ?? 0} sessioni`,
                 `${iscrizioni?.length ?? 0} iscrizioni`,
               ].join(' · ')}
             </p>

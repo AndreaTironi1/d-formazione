@@ -4,6 +4,16 @@ import { useMutation } from 'convex/react'
 import { api } from '../../convex/_generated/api'
 import { Upload, FileSpreadsheet, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react'
 
+interface GiornoRow {
+  data: string
+  modalitaMattina?: string
+  mattinaInizio?: string
+  mattinaFine?: string
+  modalitaPomeriggio?: string
+  pomeriggioInizio?: string
+  pomeriggioFine?: string
+}
+
 interface ParsedData {
   coe: Array<{ idCoe: string; nome: string }>
   sedi: Array<{ idSede: string; areaGeografica: string }>
@@ -24,6 +34,21 @@ interface ParsedData {
     oreAula?: number
     priorita: number
     coeNome?: string
+  }>
+  sessioni: Array<{
+    idCorso: string
+    tema: string
+    dataInizio?: string
+    dataFine?: string
+    nomeDocenteAula?: string
+    nomeDocenteOnboarding?: string
+    note?: string
+    giorniErogazione: GiornoRow[]
+  }>
+  iscrizioni: Array<{
+    dipendente: string
+    idCorso: string
+    temaSessione: string
   }>
 }
 
@@ -59,6 +84,8 @@ export default function ImportExcel() {
         dipendenti: [],
         servizi: [],
         corsi: [],
+        sessioni: [],
+        iscrizioni: [],
       }
 
       // Helper to read a sheet as array of objects
@@ -172,6 +199,52 @@ export default function ImportExcel() {
         })
       }
 
+      // Parse Sessioni sheet (one row per giorno; rows with same ID Corso + Tema are grouped)
+      const sessioniRows = readSheet('Sessioni')
+      const sessioniByKey = new Map<string, typeof parsed.sessioni[0]>()
+      for (const row of sessioniRows) {
+        const idCorso = String(row['ID Corso'] ?? '').trim()
+        const tema = String(row['Tema Sessione'] ?? '').trim()
+        if (!idCorso || !tema) continue
+        const key = `${idCorso}|${tema}`
+        if (!sessioniByKey.has(key)) {
+          sessioniByKey.set(key, {
+            idCorso,
+            tema,
+            dataInizio: String(row['Data Inizio'] ?? '').trim() || undefined,
+            dataFine: String(row['Data Fine'] ?? '').trim() || undefined,
+            nomeDocenteAula: String(row['Docente Aula'] ?? '').trim() || undefined,
+            nomeDocenteOnboarding: String(row['Docente Onboarding'] ?? '').trim() || undefined,
+            note: String(row['Note'] ?? '').trim() || undefined,
+            giorniErogazione: [],
+          })
+        }
+        const giornoData = String(row['Data Giorno'] ?? '').trim()
+        if (giornoData) {
+          sessioniByKey.get(key)!.giorniErogazione.push({
+            data: giornoData,
+            modalitaMattina: String(row['Modalità Mattina'] ?? '').trim() || undefined,
+            mattinaInizio: String(row['Mattina Inizio'] ?? '').trim() || undefined,
+            mattinaFine: String(row['Mattina Fine'] ?? '').trim() || undefined,
+            modalitaPomeriggio: String(row['Modalità Pomeriggio'] ?? '').trim() || undefined,
+            pomeriggioInizio: String(row['Pomeriggio Inizio'] ?? '').trim() || undefined,
+            pomeriggioFine: String(row['Pomeriggio Fine'] ?? '').trim() || undefined,
+          })
+        }
+      }
+      parsed.sessioni = Array.from(sessioniByKey.values())
+
+      // Parse Iscrizioni sheet
+      const iscrizioniRows = readSheet('Iscrizioni')
+      for (const row of iscrizioniRows) {
+        const dipendente = String(row['Dipendente'] ?? '').trim()
+        const idCorso = String(row['ID Corso'] ?? '').trim()
+        const temaSessione = String(row['Tema Sessione'] ?? '').trim()
+        if (dipendente && idCorso && temaSessione) {
+          parsed.iscrizioni.push({ dipendente, idCorso, temaSessione })
+        }
+      }
+
       setParsedData(parsed)
       setStatus('parsed')
     } catch (err) {
@@ -204,6 +277,8 @@ export default function ImportExcel() {
           oreAula: c.oreAula ?? undefined,
           coeNome: c.coeNome ?? undefined,
         })),
+        sessioni: parsedData.sessioni.length > 0 ? parsedData.sessioni : undefined,
+        iscrizioni: parsedData.iscrizioni.length > 0 ? parsedData.iscrizioni : undefined,
       })
       setImportResult(result as Record<string, number>)
       setStatus('done')
@@ -282,6 +357,8 @@ export default function ImportExcel() {
                 { label: 'Dipendenti', count: parsedData.dipendenti.length },
                 { label: 'Servizi', count: parsedData.servizi.length },
                 { label: 'Corsi', count: parsedData.corsi.length },
+                { label: 'Sessioni', count: parsedData.sessioni.length },
+                { label: 'Iscrizioni', count: parsedData.iscrizioni.length },
               ].map((item) => (
                 <div
                   key={item.label}
@@ -295,7 +372,7 @@ export default function ImportExcel() {
           </div>
 
           <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm text-amber-800">
-            <strong>Attenzione:</strong> L'importazione sovrascriverà tutti i dati esistenti nel database (CoE, Sedi, Dipendenti, Servizi, Corsi). Le iscrizioni verranno anch'esse azzerate.
+            <strong>Attenzione:</strong> L'importazione sovrascriverà tutti i dati esistenti nel database (CoE, Sedi, Dipendenti, Servizi, Corsi, Sessioni, Iscrizioni).
           </div>
 
           <div className="flex gap-3">

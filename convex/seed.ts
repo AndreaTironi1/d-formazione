@@ -67,10 +67,40 @@ export const seedAll = mutation({
         coeNome: v.optional(v.string()),
       })
     ),
+    sessioni: v.optional(v.array(
+      v.object({
+        idCorso: v.string(),
+        tema: v.string(),
+        dataInizio: v.optional(v.string()),
+        dataFine: v.optional(v.string()),
+        nomeDocenteAula: v.optional(v.string()),
+        nomeDocenteOnboarding: v.optional(v.string()),
+        note: v.optional(v.string()),
+        giorniErogazione: v.optional(v.array(v.object({
+          data: v.string(),
+          modalitaMattina: v.optional(v.string()),
+          mattinaInizio: v.optional(v.string()),
+          mattinaFine: v.optional(v.string()),
+          modalitaPomeriggio: v.optional(v.string()),
+          pomeriggioInizio: v.optional(v.string()),
+          pomeriggioFine: v.optional(v.string()),
+        }))),
+      })
+    )),
+    iscrizioni: v.optional(v.array(
+      v.object({
+        dipendente: v.string(),
+        idCorso: v.string(),
+        temaSessione: v.string(),
+      })
+    )),
   },
   handler: async (ctx, args) => {
     // ── 1. Clear existing data (reverse dependency order) ──────────────────
     for (const r of await ctx.db.query("iscrizioni").collect()) {
+      await ctx.db.delete(r._id);
+    }
+    for (const r of await ctx.db.query("sessioni").collect()) {
       await ctx.db.delete(r._id);
     }
     for (const r of await ctx.db.query("dipendenti_coe").collect()) {
@@ -304,12 +334,81 @@ export const seedAll = mutation({
       });
     }
 
+    // ── 7. Insert Sessioni ──────────────────────────────────────────────────
+    const corsiByIdCorsoNow = new Map<string, Id<"corsi">>();
+    for (const c of await ctx.db.query("corsi").collect()) {
+      corsiByIdCorsoNow.set(c.idCorso.toLowerCase(), c._id);
+    }
+
+    const sessioniMap = new Map<string, Id<"sessioni">>();
+    let sessioniCount = 0;
+
+    if (args.sessioni && args.sessioni.length > 0) {
+      for (const s of args.sessioni) {
+        const corsoId = corsiByIdCorsoNow.get(s.idCorso.toLowerCase());
+        if (!corsoId) continue;
+
+        const giorniClean = s.giorniErogazione
+          ?.filter(g => g.data.trim())
+          .map(g => ({
+            data: g.data,
+            modalitaMattina: (g.modalitaMattina === "TOJ" || g.modalitaMattina === "Aula")
+              ? g.modalitaMattina as "TOJ" | "Aula"
+              : undefined,
+            mattinaInizio: g.mattinaInizio || undefined,
+            mattinaFine: g.mattinaFine || undefined,
+            modalitaPomeriggio: (g.modalitaPomeriggio === "TOJ" || g.modalitaPomeriggio === "Aula")
+              ? g.modalitaPomeriggio as "TOJ" | "Aula"
+              : undefined,
+            pomeriggioInizio: g.pomeriggioInizio || undefined,
+            pomeriggioFine: g.pomeriggioFine || undefined,
+          }));
+
+        const sessId = await ctx.db.insert("sessioni", {
+          corsoId,
+          tema: s.tema,
+          dataInizio: s.dataInizio || undefined,
+          dataFine: s.dataFine || undefined,
+          nomeDocenteAula: s.nomeDocenteAula || undefined,
+          nomeDocenteOnboarding: s.nomeDocenteOnboarding || undefined,
+          note: s.note || undefined,
+          giorniErogazione: giorniClean && giorniClean.length > 0 ? giorniClean : undefined,
+        });
+        sessioniMap.set(`${s.idCorso.toLowerCase()}|${s.tema.toLowerCase()}`, sessId);
+        sessioniCount++;
+      }
+    }
+
+    // ── 8. Insert Iscrizioni ────────────────────────────────────────────────
+    let iscrizioniCount = 0;
+
+    if (args.iscrizioni && args.iscrizioni.length > 0) {
+      const dipendentiByNomeNow = new Map<string, Id<"dipendenti">>();
+      for (const d of await ctx.db.query("dipendenti").collect()) {
+        dipendentiByNomeNow.set(d.nome.toLowerCase(), d._id);
+      }
+
+      const inserted = new Set<string>();
+      for (const i of args.iscrizioni) {
+        const dipId = dipendentiByNomeNow.get(i.dipendente.toLowerCase());
+        const sessId = sessioniMap.get(`${i.idCorso.toLowerCase()}|${i.temaSessione.toLowerCase()}`);
+        if (!dipId || !sessId) continue;
+        const key = `${dipId}|${sessId}`;
+        if (inserted.has(key)) continue;
+        await ctx.db.insert("iscrizioni", { dipendenteId: dipId, sessioneId: sessId });
+        inserted.add(key);
+        iscrizioniCount++;
+      }
+    }
+
     return {
       coe: args.coe.length,
       sedi: args.sedi.length,
       dipendenti: args.dipendenti.length,
       servizi: serviziCount,
       corsi: args.corsi.length,
+      sessioni: sessioniCount,
+      iscrizioni: iscrizioniCount,
     };
   },
 });
