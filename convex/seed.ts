@@ -7,6 +7,7 @@ export const clearAll = mutation({
   handler: async (ctx) => {
     const tables = [
       "iscrizioni",
+      "sessioni",
       "dipendenti_coe",
       "dipendenti_sedi",
       "corsi",

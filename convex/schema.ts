@@ -96,6 +96,9 @@ export default defineSchema({
     note: v.optional(v.string()),
     giorniErogazione: v.optional(v.array(v.object({
       data: v.string(),
+      modalita: v.optional(v.union(v.literal("TOJ"), v.literal("Aula"))), // legacy — da rimuovere dopo clearAll
+      oraInizio: v.optional(v.string()),                                    // legacy — da rimuovere dopo clearAll
+      oraFine: v.optional(v.string()),                                      // legacy — da rimuovere dopo clearAll
       modalitaMattina: v.optional(v.union(v.literal("TOJ"), v.literal("Aula"))),
       mattinaInizio: v.optional(v.string()),
       mattinaFine: v.optional(v.string()),
@@ -109,8 +112,8 @@ export default defineSchema({
 
   iscrizioni: defineTable({
     dipendenteId: v.id("dipendenti"),
-    sessioneId: v.optional(v.id("sessioni")), // TODO: rendere obbligatorio dopo aver svuotato il DB
-    corsoId: v.optional(v.id("corsi")),        // TODO: rimuovere dopo aver svuotato il DB
+    sessioneId: v.optional(v.id("sessioni")), // temp: diventa obbligatorio dopo clearAll
+    corsoId: v.optional(v.id("corsi")),        // temp: rimuovere dopo clearAll
   })
     .index("by_dipendenteId", ["dipendenteId"])
     .index("by_sessioneId", ["sessioneId"])
