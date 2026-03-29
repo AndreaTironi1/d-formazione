@@ -10,6 +10,22 @@ interface Release {
 
 const releases: Release[] = [
   {
+    version: '0.5.1',
+    date: '2026-03-29',
+    changes: [
+      {
+        title: 'Giorni di erogazione: modalità separata per mattina e pomeriggio',
+        description:
+          'Per ogni giorno di erogazione è ora possibile scegliere separatamente se la mattina si svolge in Aula o in TOJ e se il pomeriggio si svolge in Aula o in TOJ. In precedenza era prevista un\'unica modalità per l\'intera giornata.',
+      },
+      {
+        title: 'Validazione automatica degli orari',
+        description:
+          'Il sistema verifica che gli orari inseriti per ogni giorno siano coerenti: fine mattina dopo inizio mattina, inizio pomeriggio dopo fine mattina, fine pomeriggio dopo inizio pomeriggio. Se si inserisce un orario non valido compare subito un messaggio di errore sotto la riga, e il salvataggio viene bloccato finché non si corregge.',
+      },
+    ],
+  },
+  {
     version: '0.5.0',
     date: '2026-03-29',
     label: 'Sessioni di formazione',
