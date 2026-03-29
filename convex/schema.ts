@@ -109,7 +109,8 @@ export default defineSchema({
 
   iscrizioni: defineTable({
     dipendenteId: v.id("dipendenti"),
-    sessioneId: v.id("sessioni"),
+    sessioneId: v.optional(v.id("sessioni")), // TODO: rendere obbligatorio dopo aver svuotato il DB
+    corsoId: v.optional(v.id("corsi")),        // TODO: rimuovere dopo aver svuotato il DB
   })
     .index("by_dipendenteId", ["dipendenteId"])
     .index("by_sessioneId", ["sessioneId"])

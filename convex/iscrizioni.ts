@@ -42,7 +42,7 @@ export const getAllWithRelations = query({
     return Promise.all(
       iscrizioni.map(async (i) => {
         const dipendente = await ctx.db.get(i.dipendenteId);
-        const sessione = await ctx.db.get(i.sessioneId);
+        const sessione = i.sessioneId ? await ctx.db.get(i.sessioneId) : null;
         const corso = sessione ? await ctx.db.get(sessione.corsoId) : null;
         return { ...i, dipendente, sessione, corso };
       })
@@ -116,6 +116,7 @@ export const createBulk = mutation({
       let conflict: string | null = null
 
       for (const isc of existingIscrizioni) {
+        if (!isc.sessioneId) continue
         const sess = await ctx.db.get(isc.sessioneId)
         if (!sess) continue
         const corso = await ctx.db.get(sess.corsoId)
