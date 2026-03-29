@@ -10,6 +10,17 @@ interface Release {
 
 const releases: Release[] = [
   {
+    version: '0.5.2',
+    date: '2026-03-29',
+    changes: [
+      {
+        title: 'Fix: "Crea" sessione non funzionava dalla tab Giorni erogazione',
+        description:
+          'Se si compilavano prima i giorni di erogazione e poi si cliccava "Crea" senza essere tornati sulla tab "Info sessione", il salvataggio veniva bloccato silenziosamente senza alcun messaggio. Ora l\'applicazione torna automaticamente alla tab "Info sessione" per far completare i campi obbligatori (Corso e Tema).',
+      },
+    ],
+  },
+  {
     version: '0.5.1',
     date: '2026-03-29',
     changes: [

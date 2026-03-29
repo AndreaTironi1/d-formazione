@@ -170,7 +170,10 @@ export default function SessioniList() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!formData.corsoId || !formData.tema.trim()) return
+    if (!formData.corsoId || !formData.tema.trim()) {
+      setActiveTab('info')
+      return
+    }
     setIsSubmitting(true)
     try {
       // Validazione orari
