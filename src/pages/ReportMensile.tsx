@@ -86,73 +86,104 @@ function daysInMonth(year: number, month: number): number {
   return new Date(year, month, 0).getDate()
 }
 
-function getCorsiOnDay(
+function formatDate(iso: string): string {
+  const [, m, d] = iso.split('-')
+  return `${d}/${m}`
+}
+
+type DaySlots = {
+  mattina: CorsoInfo | null
+  pomeriggio: CorsoInfo | null
+}
+
+function getDaySlots(
   dipendenteId: string,
   day: number,
   year: number,
   month: number,
   iscrizioni: IscrizioneRow[]
-): CorsoInfo[] {
+): DaySlots {
   const isoDay = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
   const date = new Date(year, month - 1, day)
   date.setHours(0, 0, 0, 0)
-  return iscrizioni
-    .filter(i => {
-      if (String(i.dipendenteId) !== dipendenteId) return false
-      if (!i.corso || !i.sessione) return false
-      const sess = i.sessione
-      // If session has explicit delivery days, check against those
-      if (sess.giorniErogazione && sess.giorniErogazione.length > 0) {
-        return sess.giorniErogazione.some(g => g.data === isoDay)
-      }
-      // Fallback: check if day falls in session window
-      if (!sess.dataInizio || !sess.dataFine) return false
+
+  let mattina: CorsoInfo | null = null
+  let pomeriggio: CorsoInfo | null = null
+
+  for (const i of iscrizioni) {
+    if (String(i.dipendenteId) !== dipendenteId) continue
+    if (!i.corso || !i.sessione) continue
+    const sess = i.sessione
+    const corso: CorsoInfo = { ...i.corso, tema: sess.tema }
+
+    if (sess.giorniErogazione && sess.giorniErogazione.length > 0) {
+      const giorno = sess.giorniErogazione.find(g => g.data === isoDay)
+      if (!giorno) continue
+      const hasM = !!(giorno.mattinaInizio || giorno.mattinaFine)
+      const hasP = !!(giorno.pomeriggioInizio || giorno.pomeriggioFine)
+      const neither = !hasM && !hasP
+      if (hasM || neither) mattina = mattina ?? corso
+      if (hasP || neither) pomeriggio = pomeriggio ?? corso
+    } else if (sess.dataInizio && sess.dataFine) {
       const start = new Date(sess.dataInizio)
       const end = new Date(sess.dataFine)
       start.setHours(0, 0, 0, 0)
       end.setHours(23, 59, 59, 999)
-      return date >= start && date <= end
-    })
-    .map(i => ({ ...i.corso!, tema: i.sessione?.tema }))
+      if (date >= start && date <= end) {
+        mattina = mattina ?? corso
+        pomeriggio = pomeriggio ?? corso
+      }
+    }
+  }
+
+  return { mattina, pomeriggio }
 }
 
 // ── Cell ─────────────────────────────────────────────────────────────────────
 
 function GridCell({
-  corsi,
+  slots,
   onClick,
   showLabels,
 }: {
-  corsi: CorsoInfo[]
+  slots: DaySlots
   onClick: (c: CorsoInfo) => void
   showLabels: boolean
 }) {
-  if (corsi.length === 0) {
-    return <td className="border border-slate-100 w-7 min-w-[1.75rem]" />
+  const { mattina, pomeriggio } = slots
+  if (!mattina && !pomeriggio) {
+    return <td className="border border-slate-100 w-8 min-w-[2rem] p-0" />
   }
 
-  const first = corsi[0]
-  const bg = PRIORITY_CELL_BG[first.priorita] ?? 'bg-slate-300'
-  const label = corsi.length > 1
-    ? `${first.tema?.slice(0, 6) ?? first.idCorso ?? first.titolo.slice(0, 6)} +${corsi.length - 1}`
-    : (first.tema?.slice(0, 8) ?? first.idCorso ?? first.titolo.slice(0, 8))
+  const mBg = mattina ? (PRIORITY_CELL_BG[mattina.priorita] ?? 'bg-slate-300') : ''
+  const pBg = pomeriggio ? (PRIORITY_CELL_BG[pomeriggio.priorita] ?? 'bg-slate-300') : ''
 
   return (
-    <td
-      className={`border border-white w-8 min-w-[2rem] cursor-pointer hover:opacity-75 transition-opacity ${bg}`}
-      onClick={() => onClick(first)}
-      title={corsi.map(c => `${c.idCorso ? `[${c.idCorso}] ` : ''}${c.titolo}`).join(' / ')}
-    >
-      {showLabels && (
-        <div
-          className="flex items-center justify-center py-1"
-          style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}
-        >
-          <span className="text-[10px] font-semibold text-white leading-none tracking-tight whitespace-nowrap">
-            {label}
+    <td className="border border-slate-100 w-8 min-w-[2rem] p-0">
+      {/* Mattina — top half */}
+      <div
+        className={`h-4 ${mBg} ${mattina ? 'cursor-pointer hover:opacity-75 transition-opacity' : 'bg-slate-50'}`}
+        onClick={() => mattina && onClick(mattina)}
+        title={mattina ? `M: ${mattina.tema ?? mattina.titolo}` : undefined}
+      >
+        {showLabels && mattina && (
+          <span className="text-[8px] font-semibold text-white leading-none px-0.5 truncate block">
+            {mattina.tema?.slice(0, 5) ?? mattina.idCorso ?? mattina.titolo.slice(0, 5)}
           </span>
-        </div>
-      )}
+        )}
+      </div>
+      {/* Pomeriggio — bottom half */}
+      <div
+        className={`h-4 ${pBg} ${pomeriggio ? 'cursor-pointer hover:opacity-75 transition-opacity' : 'bg-slate-50'}`}
+        onClick={() => pomeriggio && onClick(pomeriggio)}
+        title={pomeriggio ? `P: ${pomeriggio.tema ?? pomeriggio.titolo}` : undefined}
+      >
+        {showLabels && pomeriggio && (
+          <span className="text-[8px] font-semibold text-white leading-none px-0.5 truncate block">
+            {pomeriggio.tema?.slice(0, 5) ?? pomeriggio.idCorso ?? pomeriggio.titolo.slice(0, 5)}
+          </span>
+        )}
+      </div>
     </td>
   )
 }
@@ -486,8 +517,8 @@ export default function ReportMensile() {
                       )}
                     </td>
                     {days.map(d => {
-                      const corsi = getCorsiOnDay(String(dip._id), d, year, month, iscrizioni ?? [])
-                      return <GridCell key={d} corsi={corsi} onClick={setSelectedCorso} showLabels={showLabels} />
+                      const slots = getDaySlots(String(dip._id), d, year, month, iscrizioni ?? [])
+                      return <GridCell key={d} slots={slots} onClick={setSelectedCorso} showLabels={showLabels} />
                     })}
                   </tr>
                 ))}
@@ -506,7 +537,7 @@ export default function ReportMensile() {
           </div>
 
           {/* Dettaglio sessioni per dipendente */}
-          <div className="px-4 py-4 border-t border-slate-200 space-y-4">
+          <div className="px-4 py-4 border-t border-slate-200 space-y-6">
             <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
               Dettaglio sessioni — {MONTH_NAMES[month - 1]} {year}
             </p>
@@ -515,6 +546,20 @@ export default function ReportMensile() {
               const monthEndIso = `${year}-${String(month).padStart(2, '0')}-${String(daysInMonth(year, month)).padStart(2, '0')}`
               const monthStart = new Date(year, month - 1, 1)
               const monthEnd = new Date(year, month, 0, 23, 59, 59, 999)
+
+              // Build rows: one per fascia per giorno
+              type DettaglioRow = {
+                corso: CorsoInfo | null
+                sessioneTema: string
+                fascia: 'Mattina' | 'Pomeriggio'
+                modalita: string
+                data: string
+                oraInizio?: string
+                oraFine?: string
+              }
+
+              const rows: DettaglioRow[] = []
+
               const sessioniMese = (iscrizioni ?? []).filter(i => {
                 if (String(i.dipendenteId) !== String(dip._id)) return false
                 const sess = i.sessione
@@ -525,33 +570,122 @@ export default function ReportMensile() {
                 if (!sess.dataInizio || !sess.dataFine) return false
                 return new Date(sess.dataInizio) <= monthEnd && new Date(sess.dataFine) >= monthStart
               })
-              if (sessioniMese.length === 0) return null
+
+              for (const i of sessioniMese) {
+                const sess = i.sessione!
+                const corso = i.corso ?? null
+                const giorni = sess.giorniErogazione?.filter(g => g.data >= monthStartIso && g.data <= monthEndIso) ?? []
+
+                if (giorni.length > 0) {
+                  for (const g of giorni) {
+                    const hasM = !!(g.mattinaInizio || g.mattinaFine || g.modalitaMattina)
+                    const hasP = !!(g.pomeriggioInizio || g.pomeriggioFine || g.modalitaPomeriggio)
+                    if (hasM || (!hasM && !hasP)) {
+                      rows.push({
+                        corso, sessioneTema: sess.tema,
+                        fascia: 'Mattina',
+                        modalita: g.modalitaMattina ?? '—',
+                        data: g.data,
+                        oraInizio: g.mattinaInizio,
+                        oraFine: g.mattinaFine,
+                      })
+                    }
+                    if (hasP || (!hasM && !hasP)) {
+                      rows.push({
+                        corso, sessioneTema: sess.tema,
+                        fascia: 'Pomeriggio',
+                        modalita: g.modalitaPomeriggio ?? '—',
+                        data: g.data,
+                        oraInizio: g.pomeriggioInizio,
+                        oraFine: g.pomeriggioFine,
+                      })
+                    }
+                  }
+                } else {
+                  // fallback: window only, no fascia detail
+                  rows.push({
+                    corso, sessioneTema: sess.tema,
+                    fascia: 'Mattina',
+                    modalita: '—',
+                    data: sess.dataInizio && sess.dataFine
+                      ? `${formatDate(sess.dataInizio)} → ${formatDate(sess.dataFine)}`
+                      : '—',
+                  })
+                }
+              }
+
+              if (rows.length === 0) return null
+
+              // Sort by data then fascia
+              rows.sort((a, b) => {
+                if (a.data < b.data) return -1
+                if (a.data > b.data) return 1
+                return a.fascia === 'Mattina' ? -1 : 1
+              })
+
               return (
                 <div key={String(dip._id)}>
-                  <p className="text-sm font-semibold text-slate-800">{dip.nome}</p>
-                  <ul className="mt-1 space-y-0.5 ml-3">
-                    {sessioniMese.map((i, idx) => {
-                      const sess = i.sessione!
-                      const corso = i.corso
-                      const giorni = sess.giorniErogazione?.filter(g => g.data >= monthStartIso && g.data <= monthEndIso) ?? []
-                      return (
-                        <li key={idx} className="text-xs text-slate-600">
-                          <span className="font-medium">{sess.tema}</span>
-                          {corso?.titolo && <span className="ml-1.5 text-slate-400">{corso.titolo}</span>}
-                          {corso?.destinatari && (
-                            <span className="ml-1.5 px-1 py-0.5 rounded bg-violet-100 text-violet-700 text-[10px]">{corso.destinatari}</span>
-                          )}
-                          {giorni.length > 0 ? (
-                            <span className="ml-2 text-slate-400">
-                              {giorni.map(g => g.data).join(', ')}
+                  <p className="text-sm font-semibold text-slate-800 mb-2">{dip.nome}</p>
+                  <table className="w-full text-xs border-collapse">
+                    <thead>
+                      <tr className="bg-slate-50 text-left">
+                        <th className="border border-slate-200 px-2 py-1 font-semibold text-slate-600">Corso</th>
+                        <th className="border border-slate-200 px-2 py-1 font-semibold text-slate-600">Sessione</th>
+                        <th className="border border-slate-200 px-2 py-1 font-semibold text-slate-600">Livello</th>
+                        <th className="border border-slate-200 px-2 py-1 font-semibold text-slate-600">Destinatari</th>
+                        <th className="border border-slate-200 px-2 py-1 font-semibold text-slate-600">Fascia</th>
+                        <th className="border border-slate-200 px-2 py-1 font-semibold text-slate-600">TOJ/Aula</th>
+                        <th className="border border-slate-200 px-2 py-1 font-semibold text-slate-600">Data</th>
+                        <th className="border border-slate-200 px-2 py-1 font-semibold text-slate-600">Orari</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {rows.map((row, ridx) => (
+                        <tr key={ridx} className={ridx % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}>
+                          <td className="border border-slate-200 px-2 py-1 text-slate-700">
+                            {row.corso?.idCorso
+                              ? <span className="font-mono text-[10px] mr-1 text-slate-400">[{row.corso.idCorso}]</span>
+                              : null}
+                            {row.corso?.titolo ?? '—'}
+                          </td>
+                          <td className="border border-slate-200 px-2 py-1 font-medium text-slate-800">
+                            {row.sessioneTema}
+                          </td>
+                          <td className="border border-slate-200 px-2 py-1">
+                            {row.corso?.priorita != null ? (
+                              <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold border ${PRIORITY_BADGE[row.corso.priorita] ?? ''}`}>
+                                P{row.corso.priorita}
+                              </span>
+                            ) : '—'}
+                          </td>
+                          <td className="border border-slate-200 px-2 py-1 text-slate-600">
+                            {row.corso?.destinatari ?? '—'}
+                          </td>
+                          <td className="border border-slate-200 px-2 py-1 text-slate-600">
+                            {row.fascia}
+                          </td>
+                          <td className="border border-slate-200 px-2 py-1 font-medium">
+                            <span className={row.modalita === 'TOJ'
+                              ? 'text-violet-700'
+                              : row.modalita === 'Aula'
+                                ? 'text-blue-700'
+                                : 'text-slate-400'}
+                            >
+                              {row.modalita}
                             </span>
-                          ) : sess.dataInizio && sess.dataFine ? (
-                            <span className="ml-2 text-slate-400">{sess.dataInizio} → {sess.dataFine}</span>
-                          ) : null}
-                        </li>
-                      )
-                    })}
-                  </ul>
+                          </td>
+                          <td className="border border-slate-200 px-2 py-1 font-mono text-slate-600 whitespace-nowrap">
+                            {row.data.length === 10 ? formatDate(row.data) : row.data}
+                          </td>
+                          <td className="border border-slate-200 px-2 py-1 font-mono text-slate-600 whitespace-nowrap">
+                            {row.oraInizio || row.oraFine
+                              ? `${row.oraInizio ?? '—'} → ${row.oraFine ?? '—'}`
+                              : '—'}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               )
             })}

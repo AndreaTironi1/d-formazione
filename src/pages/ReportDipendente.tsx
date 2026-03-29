@@ -191,8 +191,12 @@ function GanttRow({
   const barColor = PRIORITY_COLORS[priorita] ?? 'bg-slate-400'
   const ore = corso?.oreAula ?? corso?.durataOre
 
-  const dataInizio = sessione?.dataInizio
-  const dataFine = sessione?.dataFine
+  // Deriva le date dalla finestra sessione o, se assente, dal primo/ultimo giorno di erogazione
+  const sortedGiorni = sessione?.giorniErogazione
+    ? [...sessione.giorniErogazione].sort((a, b) => a.data.localeCompare(b.data))
+    : undefined
+  const dataInizio = sessione?.dataInizio ?? sortedGiorni?.[0]?.data
+  const dataFine = sessione?.dataFine ?? sortedGiorni?.[sortedGiorni.length - 1]?.data
 
   const bar =
     dataInizio && dataFine

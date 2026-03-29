@@ -10,6 +10,27 @@ interface Release {
 
 const releases: Release[] = [
   {
+    version: '0.5.4',
+    date: '2026-03-29',
+    changes: [
+      {
+        title: 'Report Mensile: celle divise in mattina e pomeriggio',
+        description:
+          'Ogni cella della griglia è ora divisa in due metà: la metà superiore rappresenta la mattina e quella inferiore il pomeriggio. Se una sessione ha giorni con orari espliciti, viene colorata solo la metà pertinente (solo mattina, solo pomeriggio o entrambe). Se la sessione ha solo una finestra di date generica, entrambe le metà vengono colorate.',
+      },
+      {
+        title: 'Report Mensile: dettaglio sessioni come tabella strutturata',
+        description:
+          'Il riquadro "Dettaglio sessioni" in fondo al report mensile è stato trasformato in una vera tabella per ogni dipendente. Le colonne mostrano: Corso, Sessione, Livello di priorità (P1–P5), Destinatari, Fascia (Mattina/Pomeriggio), Modalità (TOJ/Aula), Data e Orari di inizio e fine. Le righe sono ordinate per data e poi per fascia.',
+      },
+      {
+        title: 'Report Dipendenti: barra Gantt derivata dai giorni effettivi',
+        description:
+          'Se una sessione non ha una finestra di date (dataInizio/dataFine), la barra Gantt viene ora calcolata automaticamente dal primo e dall\'ultimo giorno di erogazione effettivamente inseriti, così le sessioni con soli giorni puntuali appaiono correttamente nella timeline.',
+      },
+    ],
+  },
+  {
     version: '0.5.3',
     date: '2026-03-29',
     changes: [
