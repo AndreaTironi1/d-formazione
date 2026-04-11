@@ -331,86 +331,63 @@ export default function CorsiList() {
         </button>
       </div>
 
-      {/* Filters */}
-      <div className="space-y-2">
-        {/* Riga 1 — filtri specifici */}
-        <div className="flex gap-2 flex-wrap items-center">
-          <input
-            type="text"
-            className="input-field w-56"
-            placeholder="Filtra per titolo..."
-            value={filterTitolo}
-            onChange={(e) => setFilterTitolo(e.target.value)}
-          />
-          <select
-            className="input-field w-48"
-            value={filterAmbitoId}
-            onChange={(e) => setFilterAmbitoId(e.target.value)}
-          >
-            <option value="">Tutti gli ambiti</option>
-            {ambitiList?.map((a) => (
-              <option key={a._id} value={a._id}>{a.nome}</option>
-            ))}
-          </select>
-          <select
-            className="input-field w-44"
-            value={filterDestinatari}
-            onChange={(e) => setFilterDestinatari(e.target.value)}
-          >
-            <option value="">Tutti i destinatari</option>
-            {destinatariOptions.map((d) => (
-              <option key={d} value={d}>{d}</option>
-            ))}
-          </select>
-          {hasActiveFilters && (
-            <button
-              onClick={resetFilters}
-              className="px-3 py-1.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors"
-            >
-              Azzera filtri
-            </button>
-          )}
-        </div>
-
-        {/* Riga 2 — anno + priorità */}
-        <div className="flex gap-2 flex-wrap items-center">
-          <select
-            className="input-field w-32"
-            value={filterAnno}
-            onChange={(e) => setFilterAnno(e.target.value ? Number(e.target.value) : '')}
-          >
-            <option value="">Tutti gli anni</option>
-            {[2026, 2027, 2028, 2029, 2030].map(y => (
-              <option key={y} value={y}>{y}</option>
-            ))}
-          </select>
+      {/* Filters — unica riga */}
+      <div className="flex gap-2 flex-wrap items-center">
+        <input
+          type="text"
+          className="input-field w-52"
+          placeholder="Filtra per titolo..."
+          value={filterTitolo}
+          onChange={(e) => setFilterTitolo(e.target.value)}
+        />
+        <select
+          className="input-field w-44"
+          value={filterAmbitoId}
+          onChange={(e) => setFilterAmbitoId(e.target.value)}
+        >
+          <option value="">Tutti gli ambiti</option>
+          {ambitiList?.map((a) => (
+            <option key={a._id} value={a._id}>{a.nome}</option>
+          ))}
+        </select>
+        <select
+          className="input-field w-40"
+          value={filterDestinatari}
+          onChange={(e) => setFilterDestinatari(e.target.value)}
+        >
+          <option value="">Tutti i destinatari</option>
+          {destinatariOptions.map((d) => (
+            <option key={d} value={d}>{d}</option>
+          ))}
+        </select>
+        <select
+          className="input-field w-32"
+          value={filterAnno}
+          onChange={(e) => setFilterAnno(e.target.value ? Number(e.target.value) : '')}
+        >
+          <option value="">Tutti gli anni</option>
+          {[2026, 2027, 2028, 2029, 2030].map(y => (
+            <option key={y} value={y}>{y}</option>
+          ))}
+        </select>
+        <select
+          className="input-field w-40"
+          value={filterPriorita}
+          onChange={(e) => setFilterPriorita(e.target.value ? Number(e.target.value) : '')}
+        >
+          <option value="">Tutte le priorità</option>
+          {[1, 2, 3, 4, 5].map((p) => (
+            <option key={p} value={p}>{PRIORITA_CONFIG[p].label}</option>
+          ))}
+        </select>
+        {hasActiveFilters && (
           <button
-            onClick={() => setFilterPriorita('')}
-            className={cn(
-              'px-3 py-1.5 rounded-full text-xs font-medium transition-colors',
-              filterPriorita === ''
-                ? 'bg-slate-800 text-white'
-                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-            )}
+            onClick={resetFilters}
+            className="px-3 py-1.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors"
           >
-            Tutte le priorità
+            Azzera filtri
           </button>
-          {[1, 2, 3, 4, 5].map((p) => {
-            const cfg = PRIORITA_CONFIG[p]
-            return (
-              <button
-                key={p}
-                onClick={() => setFilterPriorita(p)}
-                className={cn(
-                  'px-3 py-1.5 rounded-full text-xs font-medium transition-colors',
-                  filterPriorita === p ? cfg.className + ' ring-2 ring-offset-1 ring-current' : cfg.className
-                )}
-              >
-                P{p}
-              </button>
-            )
-          })}
-        </div>
+        )}
       </div>
 
       <DataTable

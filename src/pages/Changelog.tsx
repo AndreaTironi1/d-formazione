@@ -10,6 +10,17 @@ interface Release {
 
 const releases: Release[] = [
   {
+    version: '0.5.9',
+    date: '2026-04-11',
+    changes: [
+      {
+        title: 'Corsi: filtri su unica riga, Priorità come menù a tendina',
+        description:
+          'I cinque filtri della pagina Corsi (Titolo, Ambito, Destinatari, Anno, Priorità) sono ora allineati su un\'unica riga. Il filtro Priorità è diventato un menù a tendina coerente con gli altri.',
+      },
+    ],
+  },
+  {
     version: '0.5.8',
     date: '2026-04-11',
     changes: [
