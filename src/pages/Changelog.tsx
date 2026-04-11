@@ -10,6 +10,22 @@ interface Release {
 
 const releases: Release[] = [
   {
+    version: '0.6.0',
+    date: '2026-04-11',
+    changes: [
+      {
+        title: 'Corsi: Owner scelto tra i Responsabili CoE',
+        description:
+          'Nel form del corso (tab Scheda), il campo Owner è ora un menù a tendina che mostra solo i dipendenti con ruolo "Responsabile CoE", eliminando la possibilità di inserire valori liberi.',
+      },
+      {
+        title: 'Corsi: assegnazione automatica Owner dai corsi esistenti',
+        description:
+          'Il pulsante "Assegna owner (N)" compare in pagina quando ci sono corsi senza owner. Cliccandolo, ogni corso riceve come owner il responsabile del CoE associato; se il CoE manca o non ha responsabile, viene assegnata Donatella Passerini.',
+      },
+    ],
+  },
+  {
     version: '0.5.9',
     date: '2026-04-11',
     changes: [

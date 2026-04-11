@@ -148,9 +148,11 @@ export default function CorsiList() {
   const corsi = useQuery(api.corsi.getAllWithCoe) as CorsoRow[] | undefined
   const coeList = useQuery(api.coe.getAll)
   const ambitiList = useQuery(api.ambiti.getAll)
+  const responsabiliCoe = useQuery(api.dipendenti.getResponsabiliCoe)
   const createCorso = useMutation(api.corsi.create)
   const updateCorso = useMutation(api.corsi.update)
   const removeCorso = useMutation(api.corsi.remove)
+  const migrateOwners = useMutation(api.corsi.migrateOwners)
 
   const [modalOpen, setModalOpen] = useState(false)
   const [editItem, setEditItem] = useState<CorsoRow | null>(null)
@@ -163,6 +165,7 @@ export default function CorsiList() {
   const [filterAmbitoId, setFilterAmbitoId] = useState('')
   const [filterDestinatari, setFilterDestinatari] = useState('')
   const [activeTab, setActiveTab] = useState<'base' | 'scheda'>('base')
+  const [migrateResult, setMigrateResult] = useState<{ aggiornati: number } | null>(null)
 
   const [formData, setFormData] = useState<FormData>(emptyForm)
   const set = (k: keyof FormData) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
@@ -232,6 +235,17 @@ export default function CorsiList() {
     }
   }
 
+  const handleMigrateOwners = async () => {
+    setIsSubmitting(true)
+    try {
+      const result = await migrateOwners({})
+      setMigrateResult(result)
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const corsiSenzaOwner = (corsi ?? []).filter(c => !c.owner).length
   const hasActiveFilters = filterTitolo !== '' || filterAmbitoId !== '' || filterDestinatari !== '' || filterPriorita !== '' || filterAnno !== ''
 
   const resetFilters = () => {
@@ -325,11 +339,30 @@ export default function CorsiList() {
               : `${corsi.length} corsi totali`}
           </p>
         </div>
-        <button onClick={openCreate} className="btn-primary">
-          <Plus className="w-4 h-4" />
-          Nuovo Corso
-        </button>
+        <div className="flex gap-2">
+          {corsiSenzaOwner > 0 && (
+            <button
+              onClick={handleMigrateOwners}
+              disabled={isSubmitting}
+              className="btn-secondary text-sm"
+              title={`${corsiSenzaOwner} corsi senza owner — assegna responsabile CoE`}
+            >
+              Assegna owner ({corsiSenzaOwner})
+            </button>
+          )}
+          <button onClick={openCreate} className="btn-primary">
+            <Plus className="w-4 h-4" />
+            Nuovo Corso
+          </button>
+        </div>
       </div>
+
+      {migrateResult && (
+        <div className="bg-green-50 border border-green-200 rounded-lg px-4 py-3 text-sm text-green-800 flex items-center justify-between">
+          <span><strong>{migrateResult.aggiornati}</strong> corsi aggiornati con il responsabile CoE.</span>
+          <button onClick={() => setMigrateResult(null)} className="text-green-600 hover:text-green-800 font-medium ml-4">×</button>
+        </div>
+      )}
 
       {/* Filters — unica riga */}
       <div className="flex gap-2 flex-wrap items-center">
@@ -542,8 +575,13 @@ export default function CorsiList() {
             <>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Owner (Responsabile)</label>
-                  <input type="text" className="input-field" value={formData.owner} onChange={set('owner')} placeholder="es. Resp. CoE" />
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Owner (Responsabile CoE)</label>
+                  <select className="input-field" value={formData.owner} onChange={set('owner')}>
+                    <option value="">— Nessuno —</option>
+                    {responsabiliCoe?.map((r) => (
+                      <option key={r._id} value={r.nome}>{r.nome}</option>
+                    ))}
+                  </select>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">Tutor</label>

@@ -110,6 +110,33 @@ export const update = mutation({
   },
 });
 
+export const migrateOwners = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const FALLBACK = "Donatella Passerini";
+    const corsi = await ctx.db.query("corsi").collect();
+    let aggiornati = 0;
+
+    for (const c of corsi) {
+      if (c.owner) continue; // già valorizzato, non sovrascrivere
+      let ownerNome = FALLBACK;
+
+      if (c.coeId) {
+        const coe = await ctx.db.get(c.coeId);
+        if (coe?.responsabileId) {
+          const resp = await ctx.db.get(coe.responsabileId);
+          if (resp?.nome) ownerNome = resp.nome;
+        }
+      }
+
+      await ctx.db.patch(c._id, { owner: ownerNome });
+      aggiornati++;
+    }
+
+    return { aggiornati };
+  },
+});
+
 export const remove = mutation({
   args: { id: v.id("corsi") },
   handler: async (ctx, { id }) => {

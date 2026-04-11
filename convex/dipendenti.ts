@@ -8,6 +8,16 @@ export const getAll = query({
   },
 });
 
+export const getResponsabiliCoe = query({
+  args: {},
+  handler: async (ctx) => {
+    return await ctx.db
+      .query("dipendenti")
+      .withIndex("by_ruolo", (q) => q.eq("ruolo", "Responsabile CoE"))
+      .collect();
+  },
+});
+
 export const getById = query({
   args: { id: v.id("dipendenti") },
   handler: async (ctx, args) => {
