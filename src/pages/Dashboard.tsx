@@ -1,6 +1,6 @@
 import { useQuery } from 'convex/react'
 import { api } from '../../convex/_generated/api'
-import { Building2, MapPin, Users, Briefcase, BookOpen, Layers, ClipboardList } from 'lucide-react'
+import { Building2, MapPin, Tag, Users, Briefcase, BookOpen, Layers, ClipboardList } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
 interface StatCardProps {
@@ -33,6 +33,7 @@ export default function Dashboard() {
   const coeWithResp = useQuery(api.coe.getAllWithResponsabili)
   const sedi = useQuery(api.sedi.getAll)
   const sediWithResp = useQuery(api.sedi.getAllWithResponsabili)
+  const ambiti = useQuery(api.ambiti.getAll)
   const dipendenti = useQuery(api.dipendenti.getAll)
   const servizi = useQuery(api.servizi.getAll)
   const corsi = useQuery(api.corsi.getAll)
@@ -42,6 +43,7 @@ export default function Dashboard() {
   const stats = [
     { label: 'CoE', count: coe?.length, icon: Building2, to: '/coe', color: 'text-purple-600', bgColor: 'bg-purple-50' },
     { label: 'Sedi', count: sedi?.length, icon: MapPin, to: '/sedi', color: 'text-blue-600', bgColor: 'bg-blue-50' },
+    { label: 'Ambiti', count: ambiti?.length, icon: Tag, to: '/ambiti', color: 'text-orange-600', bgColor: 'bg-orange-50' },
     { label: 'Dipendenti', count: dipendenti?.length, icon: Users, to: '/dipendenti', color: 'text-green-600', bgColor: 'bg-green-50' },
     { label: 'Servizi', count: servizi?.length, icon: Briefcase, to: '/servizi', color: 'text-amber-600', bgColor: 'bg-amber-50' },
     { label: 'Corsi', count: corsi?.length, icon: BookOpen, to: '/corsi', color: 'text-rose-600', bgColor: 'bg-rose-50' },
@@ -57,7 +59,7 @@ export default function Dashboard() {
       </div>
 
       {/* Stats grid */}
-      <div className="grid grid-cols-7 gap-4">
+      <div className="grid grid-cols-8 gap-4">
         {stats.map((s) => <StatCard key={s.label} {...s} />)}
       </div>
 

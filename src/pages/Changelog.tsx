@@ -10,6 +10,21 @@ interface Release {
 
 const releases: Release[] = [
   {
+    version: '0.5.7',
+    date: '2026-04-11',
+    changes: [
+      {
+        title: 'Fix esportazione Excel: colonna Ambito ora mostra il valore corretto',
+        description:
+          'Il foglio Corsi del file Excel esportato mostrava la colonna Ambito vuota dopo la migrazione al nuovo sistema. Ora viene letta correttamente dalla tabella Ambiti.',
+      },
+      {
+        title: 'Dashboard: aggiunta statistica Ambiti',
+        description: 'Il riquadro delle statistiche in home page mostra ora anche il numero di ambiti presenti nel sistema.',
+      },
+    ],
+  },
+  {
     version: '0.5.6',
     date: '2026-04-11',
     changes: [

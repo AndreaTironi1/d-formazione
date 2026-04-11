@@ -48,7 +48,8 @@ type Corso = {
   _id: string
   idCorso: string
   titolo: string
-  ambito?: string
+  ambito?: { nome: string } | null
+  ambitoNome?: string
   destinatari?: string
   oreAula?: number
   priorita?: number
@@ -153,7 +154,7 @@ export default function ExportExcel() {
     const corsiData = corsi.map((c) => ({
       IdCorso: c.idCorso,
       Titolo: c.titolo,
-      Ambito: c.ambito ?? '',
+      Ambito: c.ambitoNome ?? c.ambito?.nome ?? '',
       Destinatari: c.destinatari ?? '',
       'Ore Aula': c.oreAula ?? '',
       Priorità: c.priorita ?? '',
