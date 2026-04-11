@@ -58,6 +58,7 @@ export default defineSchema({
   corsi: defineTable({
     idCorso: v.string(),
     titolo: v.string(),
+    ambito: v.optional(v.string()),   // legacy — rimosso dalla migration migrateFromCorsi
     ambitoId: v.optional(v.id("ambiti")),
     destinatari: v.string(),
     oreAula: v.optional(v.number()),

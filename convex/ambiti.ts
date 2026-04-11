@@ -96,18 +96,19 @@ export const migrateFromCorsi = mutation({
       }
     }
 
-    // Aggiorna ogni corso con ambitoId
+    // Aggiorna ogni corso: imposta ambitoId e rimuove il campo legacy ambito
     let corsiAggiornati = 0;
     for (const c of corsi) {
-      if (c.ambitoId) continue; // già migrato
-      const legacy = (c as Record<string, unknown>).ambito;
-      if (legacy && typeof legacy === "string" && legacy.trim()) {
-        const ambitoId = ambitiByNome.get(legacy.trim().toLowerCase());
-        if (ambitoId) {
-          await ctx.db.patch(c._id, { ambitoId: ambitoId as never });
-          corsiAggiornati++;
-        }
-      }
+      const legacy = c.ambito;
+      const ambitoId = legacy?.trim()
+        ? ambitiByNome.get(legacy.trim().toLowerCase())
+        : c.ambitoId ?? undefined;
+
+      await ctx.db.patch(c._id, {
+        ambitoId: ambitoId ?? c.ambitoId,
+        ambito: undefined, // rimuove il campo legacy dal documento
+      });
+      if (ambitoId && !c.ambitoId) corsiAggiornati++;
     }
 
     return { ambitiCreati: ambitiNomi.size, corsiAggiornati };
