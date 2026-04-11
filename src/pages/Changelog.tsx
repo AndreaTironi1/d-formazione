@@ -10,6 +10,17 @@ interface Release {
 
 const releases: Release[] = [
   {
+    version: '0.6.1',
+    date: '2026-04-11',
+    changes: [
+      {
+        title: 'Corsi: Owner mostra il CoE di riferimento nel menù',
+        description:
+          'Nel menù a tendina Owner, ogni responsabile CoE è ora mostrato con il proprio CoE di appartenenza (es. "Mario Rossi — CoE P&C") per facilitare la selezione.',
+      },
+    ],
+  },
+  {
     version: '0.6.0',
     date: '2026-04-11',
     changes: [

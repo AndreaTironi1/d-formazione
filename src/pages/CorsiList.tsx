@@ -578,9 +578,14 @@ export default function CorsiList() {
                   <label className="block text-sm font-medium text-slate-700 mb-1">Owner (Responsabile CoE)</label>
                   <select className="input-field" value={formData.owner} onChange={set('owner')}>
                     <option value="">— Nessuno —</option>
-                    {responsabiliCoe?.map((r) => (
-                      <option key={r._id} value={r.nome}>{r.nome}</option>
-                    ))}
+                    {responsabiliCoe?.map((r) => {
+                      const coeNome = coeList?.find(c => c._id === r.coeId)?.nome
+                      return (
+                        <option key={r._id} value={r.nome}>
+                          {r.nome}{coeNome ? ` — ${coeNome}` : ''}
+                        </option>
+                      )
+                    })}
                   </select>
                 </div>
                 <div>
