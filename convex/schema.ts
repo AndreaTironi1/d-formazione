@@ -2,6 +2,12 @@ import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
 export default defineSchema({
+  ambiti: defineTable({
+    nome: v.string(),
+    descrizione: v.optional(v.string()),
+  })
+    .index("by_nome", ["nome"]),
+
   coe: defineTable({
     idCoe: v.string(),
     nome: v.string(),
@@ -52,7 +58,7 @@ export default defineSchema({
   corsi: defineTable({
     idCorso: v.string(),
     titolo: v.string(),
-    ambito: v.string(),
+    ambitoId: v.optional(v.id("ambiti")),
     destinatari: v.string(),
     oreAula: v.optional(v.number()),
     priorita: v.number(),
@@ -74,7 +80,7 @@ export default defineSchema({
     outputTipici: v.optional(v.string()),
   })
     .index("by_idCorso", ["idCorso"])
-    .index("by_ambito", ["ambito"])
+    .index("by_ambitoId", ["ambitoId"])
     .index("by_coeId", ["coeId"])
     .index("by_priorita", ["priorita"]),
 

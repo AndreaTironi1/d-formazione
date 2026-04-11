@@ -14,7 +14,9 @@ type CorsoRow = {
   _creationTime: number
   idCorso: string
   titolo: string
-  ambito: string
+  ambitoId?: Id<'ambiti'>
+  ambito?: { nome: string; descrizione?: string } | null
+  ambitoNome: string
   destinatari: string
   oreAula?: number
   priorita: number
@@ -59,7 +61,7 @@ const DESTINATARI_OPTIONS = ['Junior/Middle', 'Senior', 'Resp. CoE', 'Tutti']
 const DOCENZA_OPTIONS = ['Interna', 'Esterna', 'Mista']
 
 const emptyForm = {
-  idCorso: '', titolo: '', ambito: '', destinatari: 'Junior/Middle',
+  idCorso: '', titolo: '', ambitoId: '', destinatari: 'Junior/Middle',
   oreAula: '', priorita: '3', anno: '', coeId: '',
   owner: '', tutor: '', docenza: '',
   nomeDocenteAula: '', nomeDocenteOnboarding: '',
@@ -74,7 +76,7 @@ function schedaFromItem(item: CorsoRow): FormData {
   return {
     idCorso: item.idCorso,
     titolo: item.titolo,
-    ambito: item.ambito,
+    ambitoId: item.ambitoId ?? '',
     destinatari: item.destinatari,
     oreAula: item.oreAula != null ? String(item.oreAula) : '',
     priorita: String(item.priorita),
@@ -111,7 +113,7 @@ function SchedaModal({ corso, onClose }: { corso: CorsoRow; onClose: () => void 
     <Modal open onClose={onClose} title={`Scheda ${corso.idCorso}`} size="xl">
       <div className="space-y-1">
         <p className="text-xs text-slate-500 uppercase tracking-wide font-semibold mb-3">
-          {corso.coe?.nome ?? corso.ambito}
+          {corso.coe?.nome ?? corso.ambito?.nome ?? '—'}
         </p>
         <table className="w-full">
           <tbody>
@@ -145,6 +147,7 @@ export default function CorsiList() {
   const navigate = useNavigate()
   const corsi = useQuery(api.corsi.getAllWithCoe) as CorsoRow[] | undefined
   const coeList = useQuery(api.coe.getAll)
+  const ambitiList = useQuery(api.ambiti.getAll)
   const createCorso = useMutation(api.corsi.create)
   const updateCorso = useMutation(api.corsi.update)
   const removeCorso = useMutation(api.corsi.remove)
@@ -184,7 +187,7 @@ export default function CorsiList() {
       const payload = {
         idCorso: formData.idCorso.trim(),
         titolo: formData.titolo.trim(),
-        ambito: formData.ambito.trim(),
+        ambitoId: formData.ambitoId ? (formData.ambitoId as Id<'ambiti'>) : undefined,
         destinatari: formData.destinatari,
         oreAula: formData.oreAula ? Number(formData.oreAula) : undefined,
         priorita: Number(formData.priorita),
@@ -234,7 +237,15 @@ export default function CorsiList() {
   const columns: Column<CorsoRow>[] = [
     { key: 'idCorso', label: 'ID', sortable: true },
     { key: 'titolo', label: 'Titolo', sortable: true },
-    { key: 'ambito', label: 'Ambito', sortable: true },
+    {
+      key: 'ambitoNome',
+      label: 'Ambito',
+      sortable: true,
+      render: (row) =>
+        row.ambito?.nome
+          ? <span>{row.ambito.nome}</span>
+          : <span className="text-slate-400">—</span>,
+    },
     {
       key: 'destinatari',
       label: 'Destinatari',
@@ -343,7 +354,7 @@ export default function CorsiList() {
         data={filteredCorsi}
         columns={columns}
         searchPlaceholder="Cerca per titolo, ambito, ID..."
-        searchKeys={['idCorso', 'titolo', 'ambito', 'destinatari']}
+        searchKeys={['idCorso', 'titolo', 'ambitoNome', 'destinatari']}
         emptyMessage="Nessun corso trovato."
         actions={(row) => (
           <>
@@ -452,7 +463,12 @@ export default function CorsiList() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">Ambito</label>
-                  <input type="text" className="input-field" value={formData.ambito} onChange={set('ambito')} placeholder="es. CoE P&C" />
+                  <select className="input-field" value={formData.ambitoId} onChange={set('ambitoId')}>
+                    <option value="">— Nessuno —</option>
+                    {ambitiList?.map((a) => (
+                      <option key={a._id} value={a._id}>{a.nome}</option>
+                    ))}
+                  </select>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">CoE</label>

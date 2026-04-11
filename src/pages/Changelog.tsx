@@ -10,6 +10,32 @@ interface Release {
 
 const releases: Release[] = [
   {
+    version: '0.5.6',
+    date: '2026-04-11',
+    changes: [
+      {
+        title: 'Tabella Ambiti — gestione CRUD',
+        description:
+          'Aggiunta nuova sezione "Ambiti" nella sidebar (sezione Dati) con tabella CRUD completa: creazione, modifica ed eliminazione degli ambiti formativi con nome e descrizione opzionale.',
+      },
+      {
+        title: 'Migrazione ambito testuale → relazione strutturata',
+        description:
+          'Il campo "Ambito" dei corsi è ora una relazione alla tabella Ambiti invece di un testo libero. Nella pagina Ambiti è disponibile il pulsante "Migra da corsi esistenti" che legge i valori unici già presenti nel database e li struttura automaticamente.',
+      },
+      {
+        title: 'Dropdown Ambito nel form Corsi',
+        description:
+          'Il campo Ambito nel form di creazione/modifica di un corso è ora un menù a tendina popolato dalla tabella Ambiti, garantendo coerenza dei dati.',
+      },
+      {
+        title: 'Import Excel: ambiti estratti automaticamente',
+        description:
+          'Durante l\'importazione da file Excel, i valori unici della colonna Ambito vengono estratti automaticamente e inseriti nella tabella Ambiti. Il conteggio ambiti è visibile nel riepilogo di anteprima.',
+      },
+    ],
+  },
+  {
     version: '0.5.5',
     date: '2026-03-29',
     changes: [

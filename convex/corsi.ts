@@ -42,11 +42,18 @@ export const getAllWithCoe = query({
     return Promise.all(
       corsi.map(async (c) => {
         const coe = c.coeId ? await ctx.db.get(c.coeId) : null;
+        const ambito = c.ambitoId ? await ctx.db.get(c.ambitoId) : null;
         const sessioni = await ctx.db
           .query("sessioni")
           .withIndex("by_corsoId", (q) => q.eq("corsoId", c._id))
           .collect();
-        return { ...c, coe, sessioniCount: sessioni.length };
+        return {
+          ...c,
+          coe,
+          ambito,
+          ambitoNome: ambito?.nome ?? "",
+          sessioniCount: sessioni.length,
+        };
       })
     );
   },
@@ -73,7 +80,7 @@ export const create = mutation({
   args: {
     idCorso: v.string(),
     titolo: v.string(),
-    ambito: v.string(),
+    ambitoId: v.optional(v.id("ambiti")),
     destinatari: v.string(),
     oreAula: v.optional(v.number()),
     priorita: v.number(),
@@ -90,7 +97,7 @@ export const update = mutation({
     id: v.id("corsi"),
     idCorso: v.optional(v.string()),
     titolo: v.optional(v.string()),
-    ambito: v.optional(v.string()),
+    ambitoId: v.optional(v.id("ambiti")),
     destinatari: v.optional(v.string()),
     oreAula: v.optional(v.number()),
     priorita: v.optional(v.number()),

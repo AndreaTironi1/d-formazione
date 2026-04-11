@@ -29,7 +29,7 @@ interface ParsedData {
   corsi: Array<{
     idCorso: string
     titolo: string
-    ambito: string
+    ambitoNome?: string
     destinatari: string
     oreAula?: number
     priorita: number
@@ -191,7 +191,7 @@ export default function ImportExcel() {
         parsed.corsi.push({
           idCorso,
           titolo,
-          ambito: String(row['CoE / Ambito'] ?? row['Ambito'] ?? row['CoE'] ?? '').trim(),
+          ambitoNome: String(row['Ambito'] ?? row['CoE / Ambito'] ?? '').trim() || undefined,
           destinatari: String(row['Destinatari'] ?? '').trim(),
           oreAula: oreRaw !== '' && oreRaw != null ? Number(oreRaw) : undefined,
           priorita: prioritaRaw !== '' && prioritaRaw != null ? Number(prioritaRaw) : 3,
@@ -274,6 +274,7 @@ export default function ImportExcel() {
         servizi: parsedData.servizi,
         corsi: parsedData.corsi.map((c) => ({
           ...c,
+          ambitoNome: c.ambitoNome ?? undefined,
           oreAula: c.oreAula ?? undefined,
           coeNome: c.coeNome ?? undefined,
         })),
@@ -354,6 +355,7 @@ export default function ImportExcel() {
               {[
                 { label: 'CoE', count: parsedData.coe.length },
                 { label: 'Sedi', count: parsedData.sedi.length },
+                { label: 'Ambiti', count: new Set(parsedData.corsi.map(c => c.ambitoNome).filter(Boolean)).size },
                 { label: 'Dipendenti', count: parsedData.dipendenti.length },
                 { label: 'Servizi', count: parsedData.servizi.length },
                 { label: 'Corsi', count: parsedData.corsi.length },

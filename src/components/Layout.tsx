@@ -5,6 +5,7 @@ import {
   LayoutDashboard,
   Building2,
   MapPin,
+  Tag,
   Users,
   Briefcase,
   BookOpen,
@@ -38,6 +39,7 @@ const navSections: NavSection[] = [
     items: [
       { to: '/coe', label: 'CoE', icon: Building2 },
       { to: '/sedi', label: 'Sedi', icon: MapPin },
+      { to: '/ambiti', label: 'Ambiti', icon: Tag },
       { to: '/dipendenti', label: 'Dipendenti', icon: Users },
       { to: '/servizi', label: 'Servizi', icon: Briefcase },
       { to: '/corsi', label: 'Corsi', icon: BookOpen },
@@ -126,9 +128,9 @@ export default function Layout({ children }: LayoutProps) {
                 `text-xs font-mono transition-colors ${isActive ? 'text-blue-600' : 'text-slate-400 hover:text-slate-700'}`
               }
             >
-              v0.5.5
+              v0.5.6
             </NavLink>
-            <span className="text-xs text-slate-400">2026-03-29</span>
+            <span className="text-xs text-slate-400">2026-04-11</span>
           </div>
           <div className="flex items-center gap-3">
             <UserButton afterSignOutUrl="/" />

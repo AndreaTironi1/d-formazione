@@ -4,6 +4,7 @@ import Layout from './components/Layout'
 import Dashboard from './pages/Dashboard'
 import CoeList from './pages/CoeList'
 import SediList from './pages/SediList'
+import AmbitiList from './pages/AmbitiList'
 import DipendentiList from './pages/DipendentiList'
 import ServiziList from './pages/ServiziList'
 import CorsiList from './pages/CorsiList'
@@ -51,6 +52,7 @@ function App() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/coe" element={<CoeList />} />
         <Route path="/sedi" element={<SediList />} />
+        <Route path="/ambiti" element={<AmbitiList />} />
         <Route path="/dipendenti" element={<DipendentiList />} />
         <Route path="/servizi" element={<ServiziList />} />
         <Route path="/corsi" element={<CorsiList />} />

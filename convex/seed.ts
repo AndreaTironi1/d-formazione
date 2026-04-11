@@ -15,6 +15,7 @@ export const clearAll = mutation({
       "dipendenti",
       "sedi",
       "coe",
+      "ambiti",
     ] as const;
     const counts: Record<string, number> = {};
     for (const table of tables) {
@@ -60,7 +61,7 @@ export const seedAll = mutation({
       v.object({
         idCorso: v.string(),
         titolo: v.string(),
-        ambito: v.string(),
+        ambitoNome: v.optional(v.string()),
         destinatari: v.string(),
         oreAula: v.optional(v.number()),
         priorita: v.number(),
@@ -122,6 +123,9 @@ export const seedAll = mutation({
       await ctx.db.delete(r._id);
     }
     for (const r of await ctx.db.query("coe").collect()) {
+      await ctx.db.delete(r._id);
+    }
+    for (const r of await ctx.db.query("ambiti").collect()) {
       await ctx.db.delete(r._id);
     }
 
@@ -320,13 +324,27 @@ export const seedAll = mutation({
       serviziCount++;
     }
 
-    // ── 6. Insert Corsi ─────────────────────────────────────────────────────
+    // ── 6. Insert Ambiti (estratti dai nomi unici nei corsi) ────────────────
+    const ambitiByNome = new Map<string, Id<"ambiti">>();
+    for (const c of args.corsi) {
+      if (!c.ambitoNome?.trim()) continue;
+      const key = c.ambitoNome.trim().toLowerCase();
+      if (!ambitiByNome.has(key)) {
+        const id = await ctx.db.insert("ambiti", { nome: c.ambitoNome.trim() });
+        ambitiByNome.set(key, id);
+      }
+    }
+
+    // ── 7. Insert Corsi ─────────────────────────────────────────────────────
     for (const c of args.corsi) {
       const coeId = resolveCoe(c.coeNome);
+      const ambitoId = c.ambitoNome?.trim()
+        ? ambitiByNome.get(c.ambitoNome.trim().toLowerCase())
+        : undefined;
       await ctx.db.insert("corsi", {
         idCorso: c.idCorso,
         titolo: c.titolo,
-        ambito: c.ambito,
+        ambitoId,
         destinatari: c.destinatari,
         oreAula: c.oreAula,
         priorita: c.priorita,
@@ -334,7 +352,7 @@ export const seedAll = mutation({
       });
     }
 
-    // ── 7. Insert Sessioni ──────────────────────────────────────────────────
+    // ── 8. Insert Sessioni ──────────────────────────────────────────────────
     const corsiByIdCorsoNow = new Map<string, Id<"corsi">>();
     for (const c of await ctx.db.query("corsi").collect()) {
       corsiByIdCorsoNow.set(c.idCorso.toLowerCase(), c._id);
@@ -379,7 +397,7 @@ export const seedAll = mutation({
       }
     }
 
-    // ── 8. Insert Iscrizioni ────────────────────────────────────────────────
+    // ── 9. Insert Iscrizioni ────────────────────────────────────────────────
     let iscrizioniCount = 0;
 
     if (args.iscrizioni && args.iscrizioni.length > 0) {
@@ -402,6 +420,7 @@ export const seedAll = mutation({
     }
 
     return {
+      ambiti: ambitiByNome.size,
       coe: args.coe.length,
       sedi: args.sedi.length,
       dipendenti: args.dipendenti.length,
