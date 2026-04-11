@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 import { useQuery, useMutation } from 'convex/react'
 import { api } from '../../convex/_generated/api'
 import { Id } from '../../convex/_generated/dataModel'
-import { Plus, Pencil, Trash2, CalendarDays, X } from 'lucide-react'
+import { Plus, Pencil, Trash2, X } from 'lucide-react'
 import DataTable, { Column } from '../components/DataTable'
 import Modal from '../components/Modal'
 import ConfirmDialog from '../components/ConfirmDialog'
@@ -110,7 +110,6 @@ export default function SessioniList() {
   const [editItem, setEditItem] = useState<SessioneRow | null>(null)
   const [deleteItem, setDeleteItem] = useState<SessioneRow | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [activeTab, setActiveTab] = useState<'info' | 'giorni'>('info')
   const [filterCorsoId, setFilterCorsoId] = useState<string>(preCorsoId)
   const [formData, setFormData] = useState<FormData>(emptyForm)
   const [giornoError, setGiornoError] = useState<string | null>(null)
@@ -123,7 +122,6 @@ export default function SessioniList() {
   const openCreate = () => {
     setEditItem(null)
     setFormData({ ...emptyForm, corsoId: filterCorsoId })
-    setActiveTab('info')
     setGiornoError(null)
     setOrariErrors([])
     setModalOpen(true)
@@ -132,7 +130,6 @@ export default function SessioniList() {
   const openEdit = (item: SessioneRow) => {
     setEditItem(item)
     setFormData(formFromRow(item))
-    setActiveTab('info')
     setGiornoError(null)
     setOrariErrors([])
     setModalOpen(true)
@@ -170,10 +167,7 @@ export default function SessioniList() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!formData.corsoId || !formData.tema.trim()) {
-      setActiveTab('info')
-      return
-    }
+    if (!formData.corsoId || !formData.tema.trim()) return
     setIsSubmitting(true)
     try {
       // Validazione orari
@@ -181,7 +175,6 @@ export default function SessioniList() {
       if (erroriOrari.some(e => e)) {
         setOrariErrors(erroriOrari)
         setIsSubmitting(false)
-        setActiveTab('giorni')
         return
       }
 
@@ -208,7 +201,6 @@ export default function SessioniList() {
             fuoriRange.map(g => g.data).join(', ')
           )
           setIsSubmitting(false)
-          setActiveTab('giorni')
           return
         }
       }
@@ -385,208 +377,96 @@ export default function SessioniList() {
         title={editItem ? 'Modifica Sessione' : 'Nuova Sessione'}
         size="xl"
       >
-        {/* Tabs */}
-        <div className="flex border-b border-slate-200 mb-5 -mt-2">
-          {(['info', 'giorni'] as const).map((tab) => (
-            <button
-              key={tab}
-              type="button"
-              onClick={() => setActiveTab(tab)}
-              className={cn(
-                'px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors',
-                activeTab === tab
-                  ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-slate-500 hover:text-slate-700'
-              )}
-            >
-              {tab === 'info' ? 'Info sessione' : (
-                <span className="flex items-center gap-1.5">
-                  <CalendarDays className="w-3.5 h-3.5" />
-                  Giorni erogazione
-                  {formData.giorniErogazione.length > 0 && (
-                    <span className="bg-indigo-100 text-indigo-700 rounded-full px-1.5 py-0.5 text-xs font-semibold">
-                      {formData.giorniErogazione.length}
-                    </span>
-                  )}
-                </span>
-              )}
-            </button>
-          ))}
-        </div>
-
         <form onSubmit={handleSubmit} className="space-y-4">
-          {activeTab === 'info' && (
-            <>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Corso <span className="text-red-500">*</span>
-                </label>
-                <select
-                  className="input-field"
-                  value={formData.corsoId}
-                  onChange={set('corsoId')}
-                  required
-                >
-                  <option value="">— Seleziona corso —</option>
-                  {corsiList?.map((c) => (
-                    <option key={c._id} value={c._id}>[{c.idCorso}] {c.titolo}</option>
-                  ))}
-                </select>
-              </div>
 
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Tema della sessione <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  className="input-field"
-                  value={formData.tema}
-                  onChange={set('tema')}
-                  placeholder="es. Prompting avanzato"
-                  required
-                />
-              </div>
+          {/* ── Info sessione ─────────────────────────────────────── */}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              Corso <span className="text-red-500">*</span>
+            </label>
+            <select
+              className="input-field"
+              value={formData.corsoId}
+              onChange={set('corsoId')}
+              required
+            >
+              <option value="">— Seleziona corso —</option>
+              {corsiList?.map((c) => (
+                <option key={c._id} value={c._id}>[{c.idCorso}] {c.titolo}</option>
+              ))}
+            </select>
+          </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Data inizio (finestra)</label>
-                  <input type="date" className="input-field" value={formData.dataInizio} onChange={set('dataInizio')} />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Data fine (finestra)</label>
-                  <input type="date" className="input-field" value={formData.dataFine} onChange={set('dataFine')} />
-                </div>
-              </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              Tema della sessione <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              className="input-field"
+              value={formData.tema}
+              onChange={set('tema')}
+              placeholder="es. Prompting avanzato"
+              required
+            />
+          </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Docente/i aula</label>
-                  <input
-                    type="text"
-                    className="input-field"
-                    value={formData.nomeDocenteAula}
-                    onChange={set('nomeDocenteAula')}
-                    placeholder="Da individuare"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Docente/i onboarding</label>
-                  <input
-                    type="text"
-                    className="input-field"
-                    value={formData.nomeDocenteOnboarding}
-                    onChange={set('nomeDocenteOnboarding')}
-                    placeholder="Da individuare"
-                  />
-                </div>
-              </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Data inizio (finestra)</label>
+              <input type="date" className="input-field" value={formData.dataInizio} onChange={set('dataInizio')} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Data fine (finestra)</label>
+              <input type="date" className="input-field" value={formData.dataFine} onChange={set('dataFine')} />
+            </div>
+          </div>
 
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Note</label>
-                <textarea
-                  rows={2}
-                  className="input-field resize-none"
-                  value={formData.note}
-                  onChange={set('note')}
-                  placeholder="Eventuali note aggiuntive..."
-                />
-              </div>
-            </>
-          )}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Docente/i aula</label>
+              <input
+                type="text"
+                className="input-field"
+                value={formData.nomeDocenteAula}
+                onChange={set('nomeDocenteAula')}
+                placeholder="Da individuare"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Docente/i onboarding</label>
+              <input
+                type="text"
+                className="input-field"
+                value={formData.nomeDocenteOnboarding}
+                onChange={set('nomeDocenteOnboarding')}
+                placeholder="Da individuare"
+              />
+            </div>
+          </div>
 
-          {activeTab === 'giorni' && (
-            <div className="space-y-3">
-              <p className="text-xs text-slate-500">
-                Aggiungi i giorni effettivi di erogazione con modalità e orari.
-                {formData.dataInizio && formData.dataFine && (
-                  <span className="ml-1 text-indigo-600 font-medium">
-                    Devono essere tra {formData.dataInizio} e {formData.dataFine}.
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Note</label>
+            <textarea
+              rows={2}
+              className="input-field resize-none"
+              value={formData.note}
+              onChange={set('note')}
+              placeholder="Eventuali note aggiuntive..."
+            />
+          </div>
+
+          {/* ── Giorni di erogazione ──────────────────────────────── */}
+          <div className="border-t border-slate-200 pt-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-slate-700">
+                Giorni di erogazione
+                {formData.giorniErogazione.length > 0 && (
+                  <span className="ml-2 bg-indigo-100 text-indigo-700 rounded-full px-2 py-0.5 text-xs font-semibold">
+                    {formData.giorniErogazione.length}
                   </span>
                 )}
-              </p>
-              {giornoError && (
-                <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
-                  {giornoError}
-                </p>
-              )}
-              {formData.giorniErogazione.length === 0 && (
-                <p className="text-sm text-slate-400 italic py-2">Nessun giorno aggiunto.</p>
-              )}
-              {formData.giorniErogazione.map((g, idx) => (
-                <div key={idx} className="p-3 bg-slate-50 rounded-lg space-y-2">
-                  {/* Riga data + rimuovi */}
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="date"
-                      className={cn('input-field flex-1 min-w-0', isOutOfRange(g.data, formData) && 'border-red-400 ring-1 ring-red-200')}
-                      value={g.data}
-                      onChange={(e) => setGiorno(idx, 'data', e.target.value)}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => removeGiorno(idx)}
-                      className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                  {/* Mattina */}
-                  <div className="flex items-center gap-2 pl-1">
-                    <span className="text-xs text-slate-500 font-medium w-20 shrink-0">Mattina</span>
-                    <select
-                      className="input-field w-20 shrink-0"
-                      value={g.modalitaMattina ?? 'Aula'}
-                      onChange={(e) => setGiorno(idx, 'modalitaMattina', e.target.value)}
-                    >
-                      <option value="Aula">Aula</option>
-                      <option value="TOJ">TOJ</option>
-                    </select>
-                    <input
-                      type="time"
-                      className="input-field flex-1 min-w-0"
-                      value={g.mattinaInizio ?? ''}
-                      onChange={(e) => setGiorno(idx, 'mattinaInizio', e.target.value)}
-                    />
-                    <span className="text-slate-400 text-xs shrink-0">→</span>
-                    <input
-                      type="time"
-                      className="input-field flex-1 min-w-0"
-                      value={g.mattinaFine ?? ''}
-                      onChange={(e) => setGiorno(idx, 'mattinaFine', e.target.value)}
-                    />
-                  </div>
-                  {/* Pomeriggio */}
-                  <div className="flex items-center gap-2 pl-1">
-                    <span className="text-xs text-slate-500 font-medium w-20 shrink-0">Pomeriggio</span>
-                    <select
-                      className="input-field w-20 shrink-0"
-                      value={g.modalitaPomeriggio ?? 'Aula'}
-                      onChange={(e) => setGiorno(idx, 'modalitaPomeriggio', e.target.value)}
-                    >
-                      <option value="Aula">Aula</option>
-                      <option value="TOJ">TOJ</option>
-                    </select>
-                    <input
-                      type="time"
-                      className="input-field flex-1 min-w-0"
-                      value={g.pomeriggioInizio ?? ''}
-                      onChange={(e) => setGiorno(idx, 'pomeriggioInizio', e.target.value)}
-                    />
-                    <span className="text-slate-400 text-xs shrink-0">→</span>
-                    <input
-                      type="time"
-                      className="input-field flex-1 min-w-0"
-                      value={g.pomeriggioFine ?? ''}
-                      onChange={(e) => setGiorno(idx, 'pomeriggioFine', e.target.value)}
-                    />
-                  </div>
-                  {/* Errore orari */}
-                  {orariErrors[idx] && (
-                    <p className="text-xs text-red-600 pl-1">{orariErrors[idx]}</p>
-                  )}
-                </div>
-              ))}
+              </h3>
               <button
                 type="button"
                 onClick={addGiorno}
@@ -596,7 +476,76 @@ export default function SessioniList() {
                 Aggiungi giorno
               </button>
             </div>
-          )}
+
+            {formData.dataInizio && formData.dataFine && (
+              <p className="text-xs text-indigo-600 font-medium">
+                Devono essere tra {formData.dataInizio} e {formData.dataFine}.
+              </p>
+            )}
+
+            {giornoError && (
+              <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                {giornoError}
+              </p>
+            )}
+
+            {formData.giorniErogazione.length === 0 && (
+              <p className="text-sm text-slate-400 italic py-1">Nessun giorno aggiunto.</p>
+            )}
+
+            {formData.giorniErogazione.map((g, idx) => (
+              <div key={idx} className="p-3 bg-slate-50 rounded-lg space-y-2">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="date"
+                    className={cn('input-field flex-1 min-w-0', isOutOfRange(g.data, formData) && 'border-red-400 ring-1 ring-red-200')}
+                    value={g.data}
+                    onChange={(e) => setGiorno(idx, 'data', e.target.value)}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeGiorno(idx)}
+                    className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+                {/* Mattina */}
+                <div className="flex items-center gap-2 pl-1">
+                  <span className="text-xs text-slate-500 font-medium w-20 shrink-0">Mattina</span>
+                  <select
+                    className="input-field w-20 shrink-0"
+                    value={g.modalitaMattina ?? 'Aula'}
+                    onChange={(e) => setGiorno(idx, 'modalitaMattina', e.target.value)}
+                  >
+                    <option value="Aula">Aula</option>
+                    <option value="TOJ">TOJ</option>
+                  </select>
+                  <input type="time" className="input-field flex-1 min-w-0" value={g.mattinaInizio ?? ''} onChange={(e) => setGiorno(idx, 'mattinaInizio', e.target.value)} />
+                  <span className="text-slate-400 text-xs shrink-0">→</span>
+                  <input type="time" className="input-field flex-1 min-w-0" value={g.mattinaFine ?? ''} onChange={(e) => setGiorno(idx, 'mattinaFine', e.target.value)} />
+                </div>
+                {/* Pomeriggio */}
+                <div className="flex items-center gap-2 pl-1">
+                  <span className="text-xs text-slate-500 font-medium w-20 shrink-0">Pomeriggio</span>
+                  <select
+                    className="input-field w-20 shrink-0"
+                    value={g.modalitaPomeriggio ?? 'Aula'}
+                    onChange={(e) => setGiorno(idx, 'modalitaPomeriggio', e.target.value)}
+                  >
+                    <option value="Aula">Aula</option>
+                    <option value="TOJ">TOJ</option>
+                  </select>
+                  <input type="time" className="input-field flex-1 min-w-0" value={g.pomeriggioInizio ?? ''} onChange={(e) => setGiorno(idx, 'pomeriggioInizio', e.target.value)} />
+                  <span className="text-slate-400 text-xs shrink-0">→</span>
+                  <input type="time" className="input-field flex-1 min-w-0" value={g.pomeriggioFine ?? ''} onChange={(e) => setGiorno(idx, 'pomeriggioFine', e.target.value)} />
+                </div>
+                {orariErrors[idx] && (
+                  <p className="text-xs text-red-600 pl-1">{orariErrors[idx]}</p>
+                )}
+              </div>
+            ))}
+          </div>
 
           <div className="flex gap-3 pt-2">
             <button type="button" onClick={() => setModalOpen(false)} className="btn-secondary flex-1" disabled={isSubmitting}>

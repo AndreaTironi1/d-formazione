@@ -10,6 +10,17 @@ interface Release {
 
 const releases: Release[] = [
   {
+    version: '0.6.3',
+    date: '2026-04-11',
+    changes: [
+      {
+        title: 'Sessioni: form unificato (info + giorni in un\'unica schermata)',
+        description:
+          'Il modal di inserimento/modifica sessione non usa più tab separati per "Info sessione" e "Giorni erogazione". I due blocchi sono ora mostrati in un\'unica form scorrevole, con una sezione separata da un divisore orizzontale.',
+      },
+    ],
+  },
+  {
     version: '0.6.2',
     date: '2026-04-11',
     changes: [

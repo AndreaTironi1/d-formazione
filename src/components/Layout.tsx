@@ -128,7 +128,7 @@ export default function Layout({ children }: LayoutProps) {
                 `text-xs font-mono transition-colors ${isActive ? 'text-blue-600' : 'text-slate-400 hover:text-slate-700'}`
               }
             >
-              v0.6.2
+              v0.6.3
             </NavLink>
             <span className="text-xs text-slate-400">2026-04-11</span>
           </div>
