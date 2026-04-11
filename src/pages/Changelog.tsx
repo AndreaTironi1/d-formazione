@@ -10,6 +10,17 @@ interface Release {
 
 const releases: Release[] = [
   {
+    version: '0.6.2',
+    date: '2026-04-11',
+    changes: [
+      {
+        title: 'Fix ricerca Sessioni: ora trova anche per titolo corso, ID corso e docente',
+        description:
+          'La ricerca nella pagina Sessioni cercava solo nel campo Tema. Ora copre anche il titolo del corso, l\'ID corso e i nomi dei docenti (aula e onboarding).',
+      },
+    ],
+  },
+  {
     version: '0.6.1',
     date: '2026-04-11',
     changes: [

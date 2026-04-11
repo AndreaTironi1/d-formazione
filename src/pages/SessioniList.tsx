@@ -247,9 +247,13 @@ export default function SessioniList() {
     }
   }
 
-  const filtered = (sessioni ?? []).filter(s =>
-    filterCorsoId ? s.corsoId === filterCorsoId : true
-  )
+  const filtered = (sessioni ?? [])
+    .filter(s => filterCorsoId ? s.corsoId === filterCorsoId : true)
+    .map(s => ({
+      ...s,
+      corsoTitolo: s.corso?.titolo ?? '',
+      corsoIdCorso: s.corso?.idCorso ?? '',
+    }))
 
   const columns: Column<SessioneRow>[] = [
     {
@@ -351,8 +355,8 @@ export default function SessioniList() {
       <DataTable
         data={filtered}
         columns={columns}
-        searchPlaceholder="Cerca per tema, corso..."
-        searchKeys={['tema']}
+        searchPlaceholder="Cerca per tema, corso, docente..."
+        searchKeys={['tema', 'corsoTitolo', 'corsoIdCorso', 'nomeDocenteAula', 'nomeDocenteOnboarding']}
         emptyMessage="Nessuna sessione trovata."
         actions={(row) => (
           <>
