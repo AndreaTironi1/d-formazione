@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { query, mutation } from "./_generated/server";
+import { Id } from "./_generated/dataModel";
 
 export const getAll = query({
   args: {},
@@ -82,7 +83,7 @@ export const migrateFromCorsi = mutation({
     }
 
     // Inserisci ambiti mancanti
-    const ambitiByNome = new Map<string, string>();
+    const ambitiByNome = new Map<string, Id<"ambiti">>();
     for (const nome of ambitiNomi) {
       const existing = await ctx.db
         .query("ambiti")
