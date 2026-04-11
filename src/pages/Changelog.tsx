@@ -10,6 +10,17 @@ interface Release {
 
 const releases: Release[] = [
   {
+    version: '0.5.8',
+    date: '2026-04-11',
+    changes: [
+      {
+        title: 'Corsi: filtri specifici per Titolo, Ambito e Destinatari',
+        description:
+          'Nella pagina Corsi sono stati aggiunti tre filtri dedicati: un campo testo per filtrare per titolo (ricerca parziale), un menù a tendina per l\'ambito (valori dalla tabella Ambiti) e uno per i destinatari (valori presenti nei corsi). I filtri si combinano tra loro e con i filtri Anno e Priorità già esistenti. Il contatore in alto mostra quanti corsi sono visibili rispetto al totale. Il bottone "Azzera filtri" compare solo quando almeno un filtro è attivo.',
+      },
+    ],
+  },
+  {
     version: '0.5.7',
     date: '2026-04-11',
     changes: [

@@ -159,6 +159,9 @@ export default function CorsiList() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [filterPriorita, setFilterPriorita] = useState<number | ''>('')
   const [filterAnno, setFilterAnno] = useState<number | ''>('')
+  const [filterTitolo, setFilterTitolo] = useState('')
+  const [filterAmbitoId, setFilterAmbitoId] = useState('')
+  const [filterDestinatari, setFilterDestinatari] = useState('')
   const [activeTab, setActiveTab] = useState<'base' | 'scheda'>('base')
 
   const [formData, setFormData] = useState<FormData>(emptyForm)
@@ -229,9 +232,24 @@ export default function CorsiList() {
     }
   }
 
+  const hasActiveFilters = filterTitolo !== '' || filterAmbitoId !== '' || filterDestinatari !== '' || filterPriorita !== '' || filterAnno !== ''
+
+  const resetFilters = () => {
+    setFilterTitolo('')
+    setFilterAmbitoId('')
+    setFilterDestinatari('')
+    setFilterPriorita('')
+    setFilterAnno('')
+  }
+
+  const destinatariOptions = [...new Set((corsi ?? []).map(c => c.destinatari).filter(Boolean))].sort()
+
   const filteredCorsi = (corsi ?? []).filter(c =>
     (filterPriorita === '' || c.priorita === filterPriorita) &&
-    (filterAnno === '' || c.anno === filterAnno)
+    (filterAnno === '' || c.anno === filterAnno) &&
+    (filterTitolo === '' || c.titolo.toLowerCase().includes(filterTitolo.toLowerCase())) &&
+    (filterAmbitoId === '' || c.ambitoId === filterAmbitoId) &&
+    (filterDestinatari === '' || c.destinatari === filterDestinatari)
   )
 
   const columns: Column<CorsoRow>[] = [
@@ -301,7 +319,11 @@ export default function CorsiList() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Corsi</h1>
-          <p className="text-slate-500 text-sm mt-1">{corsi?.length ?? '...'} corsi totali</p>
+          <p className="text-slate-500 text-sm mt-1">
+            {corsi === undefined ? '...' : hasActiveFilters
+              ? `${filteredCorsi.length} di ${corsi.length} corsi`
+              : `${corsi.length} corsi totali`}
+          </p>
         </div>
         <button onClick={openCreate} className="btn-primary">
           <Plus className="w-4 h-4" />
@@ -310,44 +332,85 @@ export default function CorsiList() {
       </div>
 
       {/* Filters */}
-      <div className="flex gap-2 flex-wrap">
-        {/* Anno filter */}
-        <select
-          className="input-field w-32"
-          value={filterAnno}
-          onChange={(e) => setFilterAnno(e.target.value ? Number(e.target.value) : '')}
-        >
-          <option value="">Tutti gli anni</option>
-          {[2026, 2027, 2028, 2029, 2030].map(y => (
-            <option key={y} value={y}>{y}</option>
-          ))}
-        </select>
-        <button
-          onClick={() => setFilterPriorita('')}
-          className={cn(
-            'px-3 py-1.5 rounded-full text-xs font-medium transition-colors',
-            filterPriorita === ''
-              ? 'bg-slate-800 text-white'
-              : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-          )}
-        >
-          Tutte le priorità
-        </button>
-        {[1, 2, 3, 4, 5].map((p) => {
-          const cfg = PRIORITA_CONFIG[p]
-          return (
+      <div className="space-y-2">
+        {/* Riga 1 — filtri specifici */}
+        <div className="flex gap-2 flex-wrap items-center">
+          <input
+            type="text"
+            className="input-field w-56"
+            placeholder="Filtra per titolo..."
+            value={filterTitolo}
+            onChange={(e) => setFilterTitolo(e.target.value)}
+          />
+          <select
+            className="input-field w-48"
+            value={filterAmbitoId}
+            onChange={(e) => setFilterAmbitoId(e.target.value)}
+          >
+            <option value="">Tutti gli ambiti</option>
+            {ambitiList?.map((a) => (
+              <option key={a._id} value={a._id}>{a.nome}</option>
+            ))}
+          </select>
+          <select
+            className="input-field w-44"
+            value={filterDestinatari}
+            onChange={(e) => setFilterDestinatari(e.target.value)}
+          >
+            <option value="">Tutti i destinatari</option>
+            {destinatariOptions.map((d) => (
+              <option key={d} value={d}>{d}</option>
+            ))}
+          </select>
+          {hasActiveFilters && (
             <button
-              key={p}
-              onClick={() => setFilterPriorita(p)}
-              className={cn(
-                'px-3 py-1.5 rounded-full text-xs font-medium transition-colors',
-                filterPriorita === p ? cfg.className + ' ring-2 ring-offset-1 ring-current' : cfg.className
-              )}
+              onClick={resetFilters}
+              className="px-3 py-1.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors"
             >
-              P{p}
+              Azzera filtri
             </button>
-          )
-        })}
+          )}
+        </div>
+
+        {/* Riga 2 — anno + priorità */}
+        <div className="flex gap-2 flex-wrap items-center">
+          <select
+            className="input-field w-32"
+            value={filterAnno}
+            onChange={(e) => setFilterAnno(e.target.value ? Number(e.target.value) : '')}
+          >
+            <option value="">Tutti gli anni</option>
+            {[2026, 2027, 2028, 2029, 2030].map(y => (
+              <option key={y} value={y}>{y}</option>
+            ))}
+          </select>
+          <button
+            onClick={() => setFilterPriorita('')}
+            className={cn(
+              'px-3 py-1.5 rounded-full text-xs font-medium transition-colors',
+              filterPriorita === ''
+                ? 'bg-slate-800 text-white'
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+            )}
+          >
+            Tutte le priorità
+          </button>
+          {[1, 2, 3, 4, 5].map((p) => {
+            const cfg = PRIORITA_CONFIG[p]
+            return (
+              <button
+                key={p}
+                onClick={() => setFilterPriorita(p)}
+                className={cn(
+                  'px-3 py-1.5 rounded-full text-xs font-medium transition-colors',
+                  filterPriorita === p ? cfg.className + ' ring-2 ring-offset-1 ring-current' : cfg.className
+                )}
+              >
+                P{p}
+              </button>
+            )
+          })}
+        </div>
       </div>
 
       <DataTable
