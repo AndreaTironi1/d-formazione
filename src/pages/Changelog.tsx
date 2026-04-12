@@ -10,6 +10,17 @@ interface Release {
 
 const releases: Release[] = [
   {
+    version: '0.6.6',
+    date: '2026-04-12',
+    changes: [
+      {
+        title: 'Sessioni: filtri corso allineati a pagina Corsi (Titolo, Ambito, Destinatari)',
+        description:
+          'Il filtro "Tutti i corsi" è stato sostituito con tre filtri identici a quelli della pagina Corsi: testo libero su Titolo, select su Ambito e select su Destinatari. Le sessioni mostrate sono quelle dei corsi che soddisfano i criteri selezionati.',
+      },
+    ],
+  },
+  {
     version: '0.6.5',
     date: '2026-04-12',
     changes: [

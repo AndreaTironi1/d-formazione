@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
 import { useQuery, useMutation } from 'convex/react'
 import { api } from '../../convex/_generated/api'
 import { Id } from '../../convex/_generated/dataModel'
@@ -102,11 +101,9 @@ function formFromRow(row: SessioneRow): FormData {
 }
 
 export default function SessioniList() {
-  const [searchParams] = useSearchParams()
-  const preCorsoId = searchParams.get('corsoId') ?? ''
-
   const sessioni = useQuery(api.sessioni.getAllWithRelations) as SessioneRow[] | undefined
   const corsiList = useQuery(api.corsi.getAll)
+  const ambitiList = useQuery(api.ambiti.getAll)
   const createSessione = useMutation(api.sessioni.create)
   const updateSessione = useMutation(api.sessioni.update)
   const removeSessione = useMutation(api.sessioni.remove)
@@ -115,7 +112,9 @@ export default function SessioniList() {
   const [editItem, setEditItem] = useState<SessioneRow | null>(null)
   const [deleteItem, setDeleteItem] = useState<SessioneRow | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [filterCorsoId, setFilterCorsoId] = useState<string>(preCorsoId)
+  const [filterTitolo, setFilterTitolo] = useState('')
+  const [filterAmbitoId, setFilterAmbitoId] = useState('')
+  const [filterDestinatari, setFilterDestinatari] = useState('')
   const [formData, setFormData] = useState<FormData>(emptyForm)
   const [giornoError, setGiornoError] = useState<string | null>(null)
   const [orariErrors, setOrariErrors] = useState<string[]>([])
@@ -126,7 +125,7 @@ export default function SessioniList() {
 
   const openCreate = () => {
     setEditItem(null)
-    setFormData({ ...emptyForm, corsoId: filterCorsoId })
+    setFormData({ ...emptyForm })
     setGiornoError(null)
     setOrariErrors([])
     setModalOpen(true)
@@ -244,8 +243,22 @@ export default function SessioniList() {
     }
   }
 
+  const destinatariOptions = [...new Set((corsiList ?? []).map(c => c.destinatari).filter(Boolean))].sort() as string[]
+
+  const hasActiveFilters = filterTitolo !== '' || filterAmbitoId !== '' || filterDestinatari !== ''
+
+  const filteredCorsiIds = new Set(
+    (corsiList ?? [])
+      .filter(c =>
+        (filterTitolo === '' || c.titolo.toLowerCase().includes(filterTitolo.toLowerCase())) &&
+        (filterAmbitoId === '' || c.ambitoId === filterAmbitoId) &&
+        (filterDestinatari === '' || c.destinatari === filterDestinatari)
+      )
+      .map(c => c._id)
+  )
+
   const filtered = (sessioni ?? [])
-    .filter(s => filterCorsoId ? s.corsoId === filterCorsoId : true)
+    .filter(s => !hasActiveFilters || filteredCorsiIds.has(s.corsoId))
     .map(s => ({
       ...s,
       corsoTitolo: s.corso?.titolo ?? '',
@@ -312,7 +325,7 @@ export default function SessioniList() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Sessioni</h1>
-          <p className="text-slate-500 text-sm mt-1">{filtered.length} sessioni{filterCorsoId ? ' (filtrate)' : ' totali'}</p>
+          <p className="text-slate-500 text-sm mt-1">{filtered.length} sessioni{hasActiveFilters ? ' (filtrate)' : ' totali'}</p>
         </div>
         <button onClick={openCreate} className="btn-primary">
           <Plus className="w-4 h-4" />
@@ -320,26 +333,41 @@ export default function SessioniList() {
         </button>
       </div>
 
-      {/* Filter */}
-      <div className="flex items-center gap-3">
-        <div className="flex-1 max-w-xs">
-          <select
-            className="input-field"
-            value={filterCorsoId}
-            onChange={(e) => setFilterCorsoId(e.target.value)}
-          >
-            <option value="">— Tutti i corsi —</option>
-            {corsiList?.map((c) => (
-              <option key={c._id} value={c._id}>[{c.idCorso}] {c.titolo}</option>
-            ))}
-          </select>
-        </div>
-        {filterCorsoId && (
+      {/* Filters */}
+      <div className="flex gap-2 flex-wrap items-center">
+        <input
+          type="text"
+          className="input-field w-52"
+          placeholder="Filtra per titolo..."
+          value={filterTitolo}
+          onChange={(e) => setFilterTitolo(e.target.value)}
+        />
+        <select
+          className="input-field w-44"
+          value={filterAmbitoId}
+          onChange={(e) => setFilterAmbitoId(e.target.value)}
+        >
+          <option value="">Tutti gli ambiti</option>
+          {ambitiList?.map((a) => (
+            <option key={a._id} value={a._id}>{a.nome}</option>
+          ))}
+        </select>
+        <select
+          className="input-field w-40"
+          value={filterDestinatari}
+          onChange={(e) => setFilterDestinatari(e.target.value)}
+        >
+          <option value="">Tutti i destinatari</option>
+          {destinatariOptions.map((d) => (
+            <option key={d} value={d}>{d}</option>
+          ))}
+        </select>
+        {hasActiveFilters && (
           <button
-            onClick={() => setFilterCorsoId('')}
-            className="flex items-center gap-1 text-xs text-slate-500 hover:text-slate-800 transition-colors"
+            onClick={() => { setFilterTitolo(''); setFilterAmbitoId(''); setFilterDestinatari('') }}
+            className="px-3 py-1.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors"
           >
-            <X className="w-3.5 h-3.5" /> Rimuovi filtro
+            Azzera filtri
           </button>
         )}
       </div>
