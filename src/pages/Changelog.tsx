@@ -10,6 +10,28 @@ interface Release {
 
 const releases: Release[] = [
   {
+    version: '0.6.5',
+    date: '2026-04-12',
+    changes: [
+      {
+        title: 'Sessioni: colonna "Finestra date" sostituita con i giorni sessione',
+        description:
+          'La colonna "Finestra date" è stata rimossa. Al suo posto compare "Giorni sessione": mostra le date dei giorni di erogazione inseriti, oppure il badge "Giorni mancanti" se non ne è stato aggiunto nessuno.',
+      },
+    ],
+  },
+  {
+    version: '0.6.4',
+    date: '2026-04-12',
+    changes: [
+      {
+        title: 'Sessioni: orari limitati tra le 08:00 e le 19:00',
+        description:
+          'Gli input degli orari nei giorni di erogazione accettano solo valori compresi tra le 08:00 e le 19:00, sia tramite attributi HTML (min/max) sia tramite validazione lato form.',
+      },
+    ],
+  },
+  {
     version: '0.6.3',
     date: '2026-04-11',
     changes: [

@@ -21,6 +21,11 @@ type GiornoErogazione = {
 
 function validateOrariGiorno(g: GiornoErogazione): string | null {
   const { mattinaInizio, mattinaFine, pomeriggioInizio, pomeriggioFine } = g
+  const allTimes = [mattinaInizio, mattinaFine, pomeriggioInizio, pomeriggioFine].filter(Boolean) as string[]
+  for (const t of allTimes) {
+    if (t < '08:00' || t > '19:00')
+      return 'Gli orari devono essere compresi tra le 08:00 e le 19:00'
+  }
   if (mattinaInizio && mattinaFine && mattinaFine <= mattinaInizio)
     return 'Fine mattina deve essere dopo inizio mattina'
   if (mattinaFine && pomeriggioInizio && pomeriggioInizio <= mattinaFine)
@@ -266,24 +271,19 @@ export default function SessioniList() {
       render: (row) => <span className="font-medium text-slate-800">{row.tema}</span>,
     },
     {
-      key: 'dataInizio',
-      label: 'Finestra date',
-      render: (row) => (
-        <span className="text-sm text-slate-600">
-          {formatDate(row.dataInizio)} → {formatDate(row.dataFine)}
-        </span>
-      ),
-    },
-    {
       key: 'giorniErogazione',
-      label: 'Giorni erogazione',
+      label: 'Giorni sessione',
       render: (row) => {
-        const n = row.giorniErogazione?.length ?? 0
-        return n > 0 ? (
-          <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-700">
-            {n} {n === 1 ? 'giorno' : 'giorni'}
-          </span>
-        ) : <span className="text-slate-400 text-xs">—</span>
+        const giorni = row.giorniErogazione ?? []
+        if (giorni.length === 0)
+          return <span className="text-xs font-medium text-amber-600">Giorni mancanti</span>
+        return (
+          <div className="flex flex-col gap-0.5">
+            {giorni.map((g) => (
+              <span key={g.data} className="text-xs text-slate-600">{formatDate(g.data)}</span>
+            ))}
+          </div>
+        )
       },
     },
     {
@@ -521,9 +521,9 @@ export default function SessioniList() {
                     <option value="Aula">Aula</option>
                     <option value="TOJ">TOJ</option>
                   </select>
-                  <input type="time" className="input-field flex-1 min-w-0" value={g.mattinaInizio ?? ''} onChange={(e) => setGiorno(idx, 'mattinaInizio', e.target.value)} />
+                  <input type="time" min="08:00" max="19:00" className="input-field flex-1 min-w-0" value={g.mattinaInizio ?? ''} onChange={(e) => setGiorno(idx, 'mattinaInizio', e.target.value)} />
                   <span className="text-slate-400 text-xs shrink-0">→</span>
-                  <input type="time" className="input-field flex-1 min-w-0" value={g.mattinaFine ?? ''} onChange={(e) => setGiorno(idx, 'mattinaFine', e.target.value)} />
+                  <input type="time" min="08:00" max="19:00" className="input-field flex-1 min-w-0" value={g.mattinaFine ?? ''} onChange={(e) => setGiorno(idx, 'mattinaFine', e.target.value)} />
                 </div>
                 {/* Pomeriggio */}
                 <div className="flex items-center gap-2 pl-1">
@@ -536,9 +536,9 @@ export default function SessioniList() {
                     <option value="Aula">Aula</option>
                     <option value="TOJ">TOJ</option>
                   </select>
-                  <input type="time" className="input-field flex-1 min-w-0" value={g.pomeriggioInizio ?? ''} onChange={(e) => setGiorno(idx, 'pomeriggioInizio', e.target.value)} />
+                  <input type="time" min="08:00" max="19:00" className="input-field flex-1 min-w-0" value={g.pomeriggioInizio ?? ''} onChange={(e) => setGiorno(idx, 'pomeriggioInizio', e.target.value)} />
                   <span className="text-slate-400 text-xs shrink-0">→</span>
-                  <input type="time" className="input-field flex-1 min-w-0" value={g.pomeriggioFine ?? ''} onChange={(e) => setGiorno(idx, 'pomeriggioFine', e.target.value)} />
+                  <input type="time" min="08:00" max="19:00" className="input-field flex-1 min-w-0" value={g.pomeriggioFine ?? ''} onChange={(e) => setGiorno(idx, 'pomeriggioFine', e.target.value)} />
                 </div>
                 {orariErrors[idx] && (
                   <p className="text-xs text-red-600 pl-1">{orariErrors[idx]}</p>
