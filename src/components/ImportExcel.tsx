@@ -2,7 +2,7 @@ import { useState, useRef } from 'react'
 import { useAuth } from '@clerk/clerk-react'
 import { useMutation } from 'convex/react'
 import { api } from '../../convex/_generated/api'
-import { Upload, FileSpreadsheet, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react'
+import { Upload, FileSpreadsheet, CheckCircle2, AlertCircle, Loader2, Download } from 'lucide-react'
 
 interface GiornoRow {
   data: string
@@ -296,13 +296,89 @@ export default function ImportExcel() {
     setImportResult(null)
   }
 
+  const downloadTemplate = async () => {
+    const XLSX = await import('xlsx')
+    const wb = XLSX.utils.book_new()
+
+    // CoE
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet([
+      { 'ID CoE': 'COE-01', 'Nome CoE': 'CoE Esempio' },
+    ]), 'CoE')
+
+    // Sedi
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet([
+      { 'ID Sede': 'SEDE-01', 'Area Geografica / Sede': 'Piemonte' },
+    ]), 'Sedi')
+
+    // Responsabili CoE
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet([
+      { 'CoE': 'CoE Esempio', 'Nome Responsabile': 'Mario Rossi', 'Email': 'mario.rossi@azienda.it', 'Seniority': 'Senior' },
+    ]), 'Responsabili CoE')
+
+    // Responsabili Sede
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet([
+      { 'Nome': 'Anna Bianchi', 'Sede': 'Piemonte', 'CoE di afferenza': 'CoE Esempio', 'Email': 'anna.bianchi@azienda.it', 'Seniority': 'Senior' },
+    ]), 'Responsabili Sede')
+
+    // Dipendenti
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet([
+      { 'Nome': 'Marco Verdi', 'CoE principale': 'CoE Esempio', 'Sede / Area Geografica': 'Piemonte', 'Email': 'marco.verdi@azienda.it', 'Seniority': 'Middle', 'Ruolo': 'Consulente' },
+    ]), 'Dipendenti')
+
+    // Servizi
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet([
+      { 'Nome Servizio': 'Analisi Organizzativa', 'CoE': 'CoE Esempio' },
+    ]), 'Servizi')
+
+    // Corsi
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet([
+      { 'ID Corso': 'CORSO-01', 'Titolo Corso': 'Corso Esempio', 'Ambito': 'Ambito Esempio', 'Destinatari': 'Junior/Middle', 'Ore Aula': 8, 'Priorità': 3 },
+    ]), 'Corsi')
+
+    // Sessioni
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet([
+      {
+        'ID Corso': 'CORSO-01',
+        'Tema Sessione': 'Edizione 1',
+        'Data Inizio': '2026-05-01',
+        'Data Fine': '2026-05-01',
+        'Docente Aula': '',
+        'Docente Onboarding': '',
+        'Note': '',
+        'Data Giorno': '2026-05-01',
+        'Modalità Mattina': 'In Presenza',
+        'Mattina Inizio': '09:00',
+        'Mattina Fine': '13:00',
+        'Modalità Pomeriggio': '',
+        'Pomeriggio Inizio': '',
+        'Pomeriggio Fine': '',
+      },
+    ]), 'Sessioni')
+
+    // Iscrizioni
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet([
+      { 'Dipendente': 'Marco Verdi', 'ID Corso': 'CORSO-01', 'Tema Sessione': 'Edizione 1' },
+    ]), 'Iscrizioni')
+
+    XLSX.writeFile(wb, 'template_importazione.xlsx')
+  }
+
   return (
     <div className="max-w-2xl mx-auto space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-slate-900">Importa dati Excel</h1>
-        <p className="text-slate-500 mt-1 text-sm">
-          Carica il file Piano_Formazione_Dasein.xlsx per importare tutti i dati nel database.
-        </p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">Importa dati Excel</h1>
+          <p className="text-slate-500 mt-1 text-sm">
+            Carica il file Piano_Formazione_Dasein.xlsx per importare tutti i dati nel database.
+          </p>
+        </div>
+        <button
+          onClick={downloadTemplate}
+          className="btn-secondary flex items-center gap-2 flex-shrink-0"
+        >
+          <Download className="w-4 h-4" />
+          Scarica template
+        </button>
       </div>
 
       {/* Upload area */}
