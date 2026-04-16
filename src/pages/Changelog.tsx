@@ -10,20 +10,6 @@ interface Release {
 
 const releases: Release[] = [
   {
-    version: '0.7.2',
-    date: '2026-04-16',
-    changes: [
-      {
-        title: 'Esporta: aggiunto foglio Ambiti e colonna CoE nei Servizi',
-        description: 'Il file di esportazione include ora il foglio "Ambiti" (Nome, Descrizione). Il foglio "Servizi" include la colonna "CoE" prima assente. Le colonne di CoE, Sedi e Dipendenti sono state allineate ai nomi attesi dall\'importazione (es. "ID CoE", "Area Geografica / Sede", "CoE principale") per rendere il ciclo export→reimport compatibile.',
-      },
-      {
-        title: 'Importa: bottone "Scarica template" con tutti i 9 fogli',
-        description: 'Nella pagina Importa dati è disponibile il bottone "Scarica template" che genera un file template_importazione.xlsx con i 9 fogli nell\'ordine corretto (CoE, Sedi, Responsabili CoE, Responsabili Sede, Dipendenti, Servizi, Corsi, Sessioni, Iscrizioni) e le intestazioni esatte attese dal sistema di importazione, ciascuna con una riga di esempio.',
-      },
-    ],
-  },
-  {
     version: '0.7.1',
     date: '2026-04-16',
     changes: [

@@ -16,12 +16,6 @@ type Sede = {
   areaGeografica: string
 }
 
-type Ambito = {
-  _id: string
-  nome: string
-  descrizione?: string
-}
-
 type CoeMultiplo = {
   coe: { nome: string } | null
   percentuale?: number
@@ -92,7 +86,6 @@ type Sessione = {
 export default function ExportExcel() {
   const coeList = useQuery(api.coe.getAllWithResponsabili) as CoeWithResp[] | undefined
   const sediList = useQuery(api.sedi.getAll) as Sede[] | undefined
-  const ambitiList = useQuery(api.ambiti.getAll) as Ambito[] | undefined
   const dipendenti = useQuery(api.dipendenti.getAllWithRelations) as Dipendente[] | undefined
   const servizi = useQuery(api.servizi.getAll) as Servizio[] | undefined
   const corsi = useQuery(api.corsi.getAllWithCoe) as Corso[] | undefined
@@ -102,7 +95,6 @@ export default function ExportExcel() {
   const isLoading =
     coeList === undefined ||
     sediList === undefined ||
-    ambitiList === undefined ||
     dipendenti === undefined ||
     servizi === undefined ||
     corsi === undefined ||
@@ -114,36 +106,22 @@ export default function ExportExcel() {
 
     const wb = XLSX.utils.book_new()
 
-    // Mappa coeId → nome per lookup nei Servizi
-    const coeMap = new Map(coeList.map(c => [c._id, c.nome]))
-
-    // Foglio CoE — colonne compatibili con ImportExcel
+    // Foglio CoE
     const coeData = coeList.map((c) => ({
-      'ID CoE': c.idCoe,
-      'Nome CoE': c.nome,
+      IdCoe: c.idCoe,
+      Nome: c.nome,
       Responsabile: c.responsabile?.nome ?? '',
     }))
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(coeData), 'CoE')
 
-    // Foglio Sedi — colonne compatibili con ImportExcel
+    // Foglio Sedi
     const sediData = sediList.map((s) => ({
-      'ID Sede': s.idSede,
-      'Area Geografica / Sede': s.areaGeografica,
+      IdSede: s.idSede,
+      'Area Geografica': s.areaGeografica,
     }))
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(sediData), 'Sedi')
 
-    // Foglio Ambiti
-    const ambitiData = ambitiList.map((a) => ({
-      Nome: a.nome,
-      Descrizione: a.descrizione ?? '',
-    }))
-    XLSX.utils.book_append_sheet(
-      wb,
-      XLSX.utils.json_to_sheet(ambitiData.length ? ambitiData : [{ Nome: '', Descrizione: '' }]),
-      'Ambiti'
-    )
-
-    // Foglio Dipendenti — colonne compatibili con ImportExcel
+    // Foglio Dipendenti
     const dipData = dipendenti.map((d) => {
       const coeLabel =
         d.coeMultipli && d.coeMultipli.length > 0
@@ -160,23 +138,22 @@ export default function ExportExcel() {
         Email: d.email ?? '',
         Ruolo: d.ruolo,
         Seniority: d.seniority ?? '',
-        'CoE principale': coeLabel,
-        'Sede / Area Geografica': sedeLabel,
+        CoE: coeLabel,
+        Sede: sedeLabel,
       }
     })
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(dipData), 'Dipendenti')
 
-    // Foglio Servizi — con colonna CoE per compatibilità ImportExcel
+    // Foglio Servizi
     const serviziData = servizi.map((s) => ({
-      'Nome Servizio': s.nome,
-      CoE: coeMap.get(s.coeId) ?? '',
+      Nome: s.nome,
     }))
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(serviziData), 'Servizi')
 
-    // Foglio Corsi — colonne compatibili con ImportExcel
+    // Foglio Corsi
     const corsiData = corsi.map((c) => ({
-      'ID Corso': c.idCorso,
-      'Titolo Corso': c.titolo,
+      IdCorso: c.idCorso,
+      Titolo: c.titolo,
       Ambito: c.ambitoNome ?? c.ambito?.nome ?? '',
       Destinatari: c.destinatari ?? '',
       'Ore Aula': c.oreAula ?? '',
@@ -184,11 +161,12 @@ export default function ExportExcel() {
     }))
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(corsiData), 'Corsi')
 
-    // Foglio Sessioni (una riga per giorno di erogazione)
+    // Foglio Sessioni (una riga per giorno di erogazione; se nessun giorno, una riga sola)
     const sessioniData: Record<string, string>[] = []
     for (const s of sessioni) {
       const base = {
         'ID Corso': s.corso?.idCorso ?? '',
+        'Titolo Corso': s.corso?.titolo ?? '',
         'Tema Sessione': s.tema,
         'Data Inizio': s.dataInizio ?? '',
         'Data Fine': s.dataFine ?? '',
@@ -254,9 +232,8 @@ export default function ExportExcel() {
             <h2 className="text-lg font-semibold text-slate-800 mb-1">Esporta tutto in Excel</h2>
             <p className="text-sm text-slate-500">
               Il file conterrà i fogli: <strong>CoE</strong>, <strong>Sedi</strong>,{' '}
-              <strong>Ambiti</strong>, <strong>Dipendenti</strong>, <strong>Servizi</strong>,{' '}
-              <strong>Corsi</strong>, <strong>Sessioni</strong> e <strong>Iscrizioni</strong>.
-              Le colonne sono compatibili con il formato di importazione.
+              <strong>Dipendenti</strong>, <strong>Servizi</strong>, <strong>Corsi</strong>,{' '}
+              <strong>Sessioni</strong> e <strong>Iscrizioni</strong>.
             </p>
           </div>
 
@@ -296,10 +273,10 @@ export default function ExportExcel() {
 
           {!isLoading && (
             <p className="text-xs text-slate-400">
+              {/* Quick summary */}
               {[
                 `${coeList?.length ?? 0} CoE`,
                 `${sediList?.length ?? 0} sedi`,
-                `${ambitiList?.length ?? 0} ambiti`,
                 `${dipendenti?.length ?? 0} dipendenti`,
                 `${servizi?.length ?? 0} servizi`,
                 `${corsi?.length ?? 0} corsi`,
