@@ -10,20 +10,6 @@ interface Release {
 
 const releases: Release[] = [
   {
-    version: '0.7.1',
-    date: '2026-04-16',
-    changes: [
-      {
-        title: 'Sedi, Dipendenti, Ambiti: import Excel dedicato con controllo doppioni',
-        description: 'Aggiunto il pattern template + import Excel alle pagine Sedi, Dipendenti e Ambiti. Ogni pagina espone "Scarica template" e "Carica da Excel". I doppioni vengono saltati automaticamente (per Sedi: stesso IdSede; per Dipendenti: stesso nome o stessa email; per Ambiti: stesso nome) e al termine viene mostrato un avviso con il conteggio di aggiunti e saltati.',
-      },
-      {
-        title: 'CoE: aggiunto controllo doppioni all\'import Excel',
-        description: 'L\'import Excel dei CoE ora salta le righe con IdCoe già presente e mostra un avviso finale con il conteggio.',
-      },
-    ],
-  },
-  {
     version: '0.7.0',
     date: '2026-04-16',
     changes: [

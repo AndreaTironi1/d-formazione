@@ -1,9 +1,8 @@
-import { useState, useRef } from 'react'
-import * as XLSX from 'xlsx'
+import { useState } from 'react'
 import { useQuery, useMutation } from 'convex/react'
 import { api } from '../../convex/_generated/api'
 import { Id } from '../../convex/_generated/dataModel'
-import { Plus, Pencil, Trash2, Download, Upload } from 'lucide-react'
+import { Plus, Pencil, Trash2 } from 'lucide-react'
 import DataTable, { Column } from '../components/DataTable'
 import Modal from '../components/Modal'
 import ConfirmDialog from '../components/ConfirmDialog'
@@ -29,41 +28,6 @@ export default function SediList() {
   const [editItem, setEditItem] = useState<SedeRow | null>(null)
   const [deleteItem, setDeleteItem] = useState<SedeRow | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
-
-  const fileInputRef = useRef<HTMLInputElement>(null)
-
-  const downloadTemplate = () => {
-    const wb = XLSX.utils.book_new()
-    const ws = XLSX.utils.json_to_sheet([{ IdSede: 'SEDE-01', 'Area Geografica': 'Nord' }])
-    XLSX.utils.book_append_sheet(wb, ws, 'Sedi')
-    XLSX.writeFile(wb, 'template_sedi.xlsx')
-  }
-
-  const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    const XLSXdyn = await import('xlsx')
-    const buffer = await file.arrayBuffer()
-    const wb = XLSXdyn.read(buffer, { type: 'array' })
-    const ws = wb.Sheets['Sedi'] ?? wb.Sheets[wb.SheetNames[0]]
-    const rows = XLSXdyn.utils.sheet_to_json<{ IdSede: string; 'Area Geografica': string }>(ws)
-    const existingIds = new Set((sediList ?? []).map(s => s.idSede.toLowerCase()))
-    let added = 0, skipped = 0
-    for (const row of rows) {
-      const idSede = String(row.IdSede ?? '').trim()
-      const areaGeografica = String(row['Area Geografica'] ?? '').trim()
-      if (!idSede || !areaGeografica) continue
-      if (existingIds.has(idSede.toLowerCase())) { skipped++; continue }
-      await createSede({ idSede, areaGeografica })
-      added++
-    }
-    e.target.value = ''
-    if (skipped > 0) {
-      window.alert(`Import completato: ${added} aggiunti, ${skipped} saltati (già presenti).`)
-    } else if (added > 0) {
-      window.alert(`Import completato: ${added} sedi aggiunte.`)
-    }
-  }
 
   const [formData, setFormData] = useState({
     idSede: '',
@@ -156,21 +120,10 @@ export default function SediList() {
           <h1 className="text-2xl font-bold text-slate-900">Sedi</h1>
           <p className="text-slate-500 text-sm mt-1">Sedi operative per area geografica</p>
         </div>
-        <div className="flex items-center gap-2">
-          <button onClick={downloadTemplate} className="btn-secondary">
-            <Download className="w-4 h-4" />
-            Scarica template
-          </button>
-          <button onClick={() => fileInputRef.current?.click()} className="btn-secondary">
-            <Upload className="w-4 h-4" />
-            Carica Sedi da Excel
-          </button>
-          <button onClick={openCreate} className="btn-primary">
-            <Plus className="w-4 h-4" />
-            Nuova Sede
-          </button>
-          <input ref={fileInputRef} type="file" accept=".xlsx,.xls" hidden onChange={handleImportFile} />
-        </div>
+        <button onClick={openCreate} className="btn-primary">
+          <Plus className="w-4 h-4" />
+          Nuova Sede
+        </button>
       </div>
 
       <DataTable

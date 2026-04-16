@@ -1,9 +1,8 @@
-import { useState, useRef } from 'react'
-import * as XLSX from 'xlsx'
+import { useState } from 'react'
 import { useQuery, useMutation } from 'convex/react'
 import { api } from '../../convex/_generated/api'
 import { Id } from '../../convex/_generated/dataModel'
-import { Plus, Pencil, Trash2, X, Download, Upload } from 'lucide-react'
+import { Plus, Pencil, Trash2, X } from 'lucide-react'
 import DataTable, { Column } from '../components/DataTable'
 import Modal from '../components/Modal'
 import ConfirmDialog from '../components/ConfirmDialog'
@@ -172,48 +171,6 @@ export default function DipendentiList() {
     }
   }
 
-  const fileInputRef = useRef<HTMLInputElement>(null)
-
-  const downloadTemplate = () => {
-    const wb = XLSX.utils.book_new()
-    const ws = XLSX.utils.json_to_sheet([{
-      Nome: 'Mario Rossi',
-      Ruolo: 'Consulente',
-      Email: 'mario.rossi@esempio.it',
-    }])
-    XLSX.utils.book_append_sheet(wb, ws, 'Dipendenti')
-    XLSX.writeFile(wb, 'template_dipendenti.xlsx')
-  }
-
-  const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    const XLSXdyn = await import('xlsx')
-    const buffer = await file.arrayBuffer()
-    const wb = XLSXdyn.read(buffer, { type: 'array' })
-    const ws = wb.Sheets['Dipendenti'] ?? wb.Sheets[wb.SheetNames[0]]
-    const rows = XLSXdyn.utils.sheet_to_json<{ Nome: string; Ruolo: string; Email?: string }>(ws)
-    const existingNomi = new Set((dipendenti ?? []).map(d => d.nome.toLowerCase()))
-    const existingEmail = new Set((dipendenti ?? []).filter(d => d.email).map(d => d.email!.toLowerCase()))
-    let added = 0, skipped = 0
-    for (const row of rows) {
-      const nome = String(row.Nome ?? '').trim()
-      const ruolo = String(row.Ruolo ?? '').trim()
-      const email = row.Email ? String(row.Email).trim() : undefined
-      if (!nome || !ruolo) continue
-      const isDup = existingNomi.has(nome.toLowerCase()) || (email ? existingEmail.has(email.toLowerCase()) : false)
-      if (isDup) { skipped++; continue }
-      await createDip({ nome, ruolo, email: email || undefined })
-      added++
-    }
-    e.target.value = ''
-    if (skipped > 0) {
-      window.alert(`Import completato: ${added} aggiunti, ${skipped} saltati (già presenti).`)
-    } else if (added > 0) {
-      window.alert(`Import completato: ${added} dipendenti aggiunti.`)
-    }
-  }
-
   // ── CoE entry helpers ────────────────────────────────────────────────────
   const addCoeEntry = () => setCoeEntries(e => [...e, { coeId: '', percentuale: '' }])
   const removeCoeEntry = (i: number) => setCoeEntries(e => e.filter((_, idx) => idx !== i))
@@ -298,21 +255,10 @@ export default function DipendentiList() {
           <h1 className="text-2xl font-bold text-slate-900">Dipendenti</h1>
           <p className="text-slate-500 text-sm mt-1">{dipendenti?.length ?? '...'} dipendenti totali</p>
         </div>
-        <div className="flex items-center gap-2">
-          <button onClick={downloadTemplate} className="btn-secondary">
-            <Download className="w-4 h-4" />
-            Scarica template
-          </button>
-          <button onClick={() => fileInputRef.current?.click()} className="btn-secondary">
-            <Upload className="w-4 h-4" />
-            Carica Dipendenti da Excel
-          </button>
-          <button onClick={openCreate} className="btn-primary">
-            <Plus className="w-4 h-4" />
-            Nuovo Dipendente
-          </button>
-          <input ref={fileInputRef} type="file" accept=".xlsx,.xls" hidden onChange={handleImportFile} />
-        </div>
+        <button onClick={openCreate} className="btn-primary">
+          <Plus className="w-4 h-4" />
+          Nuovo Dipendente
+        </button>
       </div>
 
       <DataTable

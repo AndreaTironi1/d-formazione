@@ -103,22 +103,14 @@ export default function CoeList() {
     const wb = XLSXdyn.read(buffer, { type: 'array' })
     const ws = wb.Sheets['CoE'] ?? wb.Sheets[wb.SheetNames[0]]
     const rows = XLSXdyn.utils.sheet_to_json<{ IdCoe: string; Nome: string }>(ws)
-    const existingIds = new Set((coeList ?? []).map(c => c.idCoe.toLowerCase()))
-    let added = 0, skipped = 0
     for (const row of rows) {
       const idCoe = String(row.IdCoe ?? '').trim()
       const nome = String(row.Nome ?? '').trim()
-      if (!idCoe || !nome) continue
-      if (existingIds.has(idCoe.toLowerCase())) { skipped++; continue }
-      await createCoe({ idCoe, nome })
-      added++
+      if (idCoe && nome) {
+        await createCoe({ idCoe, nome })
+      }
     }
     e.target.value = ''
-    if (skipped > 0) {
-      window.alert(`Import completato: ${added} aggiunti, ${skipped} saltati (già presenti).`)
-    } else if (added > 0) {
-      window.alert(`Import completato: ${added} CoE aggiunti.`)
-    }
   }
 
   const columns: Column<CoeRow>[] = [
