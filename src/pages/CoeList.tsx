@@ -1,9 +1,8 @@
-import { useState, useRef } from 'react'
-import * as XLSX from 'xlsx'
+import { useState } from 'react'
 import { useQuery, useMutation } from 'convex/react'
 import { api } from '../../convex/_generated/api'
 import { Id } from '../../convex/_generated/dataModel'
-import { Plus, Pencil, Trash2, Download, Upload } from 'lucide-react'
+import { Plus, Pencil, Trash2 } from 'lucide-react'
 import DataTable, { Column } from '../components/DataTable'
 import Modal from '../components/Modal'
 import ConfirmDialog from '../components/ConfirmDialog'
@@ -28,8 +27,6 @@ export default function CoeList() {
   const [editItem, setEditItem] = useState<CoeRow | null>(null)
   const [deleteItem, setDeleteItem] = useState<CoeRow | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
-
-  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [formData, setFormData] = useState({
     idCoe: '',
@@ -88,31 +85,6 @@ export default function CoeList() {
     }
   }
 
-  const downloadTemplate = () => {
-    const wb = XLSX.utils.book_new()
-    const ws = XLSX.utils.json_to_sheet([{ IdCoe: 'COE-01', Nome: 'Esempio CoE' }])
-    XLSX.utils.book_append_sheet(wb, ws, 'CoE')
-    XLSX.writeFile(wb, 'template_coe.xlsx')
-  }
-
-  const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    const XLSXdyn = await import('xlsx')
-    const buffer = await file.arrayBuffer()
-    const wb = XLSXdyn.read(buffer, { type: 'array' })
-    const ws = wb.Sheets['CoE'] ?? wb.Sheets[wb.SheetNames[0]]
-    const rows = XLSXdyn.utils.sheet_to_json<{ IdCoe: string; Nome: string }>(ws)
-    for (const row of rows) {
-      const idCoe = String(row.IdCoe ?? '').trim()
-      const nome = String(row.Nome ?? '').trim()
-      if (idCoe && nome) {
-        await createCoe({ idCoe, nome })
-      }
-    }
-    e.target.value = ''
-  }
-
   const columns: Column<CoeRow>[] = [
     { key: 'idCoe', label: 'ID CoE', sortable: true },
     { key: 'nome', label: 'Nome CoE', sortable: true },
@@ -130,27 +102,10 @@ export default function CoeList() {
           <h1 className="text-2xl font-bold text-slate-900">CoE</h1>
           <p className="text-slate-500 text-sm mt-1">Centri di Eccellenza</p>
         </div>
-        <div className="flex items-center gap-2">
-          <button onClick={downloadTemplate} className="btn-secondary">
-            <Download className="w-4 h-4" />
-            Scarica template
-          </button>
-          <button onClick={() => fileInputRef.current?.click()} className="btn-secondary">
-            <Upload className="w-4 h-4" />
-            Carica CoE da Excel
-          </button>
-          <button onClick={openCreate} className="btn-primary">
-            <Plus className="w-4 h-4" />
-            Nuovo CoE
-          </button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".xlsx,.xls"
-            hidden
-            onChange={handleImportFile}
-          />
-        </div>
+        <button onClick={openCreate} className="btn-primary">
+          <Plus className="w-4 h-4" />
+          Nuovo CoE
+        </button>
       </div>
 
       <DataTable

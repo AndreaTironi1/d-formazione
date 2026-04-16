@@ -10,24 +10,6 @@ interface Release {
 
 const releases: Release[] = [
   {
-    version: '0.7.0',
-    date: '2026-04-16',
-    changes: [
-      {
-        title: 'Menù: "Corsi" rinominato in "Corsi / Edizioni"',
-        description: 'La voce di navigazione "Corsi" è stata rinominata in "Corsi / Edizioni" per chiarire che include anche la gestione delle sessioni/edizioni dei corsi.',
-      },
-      {
-        title: 'Menù: voce "Servizi" nascosta',
-        description: 'La voce "Servizi" è stata rimossa dalla barra di navigazione laterale. La pagina rimane accessibile via URL (/servizi) e i dati restano invariati.',
-      },
-      {
-        title: 'CoE: import Excel dedicato',
-        description: 'Nella pagina CoE sono stati aggiunti due nuovi bottoni: "Scarica template" genera un file .xlsx con le colonne IdCoe e Nome pronto da compilare; "Carica CoE da Excel" permette di importare nuovi CoE dal file compilato senza sovrascrivere quelli esistenti e senza usare la sezione "Importa dati".',
-      },
-    ],
-  },
-  {
     version: '0.6.6',
     date: '2026-04-12',
     changes: [

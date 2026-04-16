@@ -7,6 +7,7 @@ import {
   MapPin,
   Tag,
   Users,
+  Briefcase,
   BookOpen,
   Layers,
   ClipboardList,
@@ -40,7 +41,8 @@ const navSections: NavSection[] = [
       { to: '/sedi', label: 'Sedi', icon: MapPin },
       { to: '/ambiti', label: 'Ambiti', icon: Tag },
       { to: '/dipendenti', label: 'Dipendenti', icon: Users },
-      { to: '/corsi', label: 'Corsi / Edizioni', icon: BookOpen },
+      { to: '/servizi', label: 'Servizi', icon: Briefcase },
+      { to: '/corsi', label: 'Corsi', icon: BookOpen },
       { to: '/sessioni', label: 'Sessioni', icon: Layers },
       { to: '/iscrizioni', label: 'Iscrizioni', icon: ClipboardList },
     ],
@@ -126,9 +128,9 @@ export default function Layout({ children }: LayoutProps) {
                 `text-xs font-mono transition-colors ${isActive ? 'text-blue-600' : 'text-slate-400 hover:text-slate-700'}`
               }
             >
-              v0.7.0
+              v0.6.6
             </NavLink>
-            <span className="text-xs text-slate-400">2026-04-16</span>
+            <span className="text-xs text-slate-400">2026-04-12</span>
           </div>
           <div className="flex items-center gap-3">
             <UserButton afterSignOutUrl="/" />
