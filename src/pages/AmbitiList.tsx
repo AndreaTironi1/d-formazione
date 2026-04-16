@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
+import * as XLSX from 'xlsx'
 import { useQuery, useMutation } from 'convex/react'
 import { api } from '../../convex/_generated/api'
 import { Id } from '../../convex/_generated/dataModel'
-import { Plus, Pencil, Trash2, RefreshCw } from 'lucide-react'
+import { Plus, Pencil, Trash2, RefreshCw, Download, Upload } from 'lucide-react'
 import DataTable, { Column } from '../components/DataTable'
 import Modal from '../components/Modal'
 import ConfirmDialog from '../components/ConfirmDialog'
@@ -79,6 +80,41 @@ export default function AmbitiList() {
     }
   }
 
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const downloadTemplate = () => {
+    const wb = XLSX.utils.book_new()
+    const ws = XLSX.utils.json_to_sheet([{ Nome: 'Digital Transformation', Descrizione: 'Ambito formativo su temi digitali' }])
+    XLSX.utils.book_append_sheet(wb, ws, 'Ambiti')
+    XLSX.writeFile(wb, 'template_ambiti.xlsx')
+  }
+
+  const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const XLSXdyn = await import('xlsx')
+    const buffer = await file.arrayBuffer()
+    const wb = XLSXdyn.read(buffer, { type: 'array' })
+    const ws = wb.Sheets['Ambiti'] ?? wb.Sheets[wb.SheetNames[0]]
+    const rows = XLSXdyn.utils.sheet_to_json<{ Nome: string; Descrizione: string }>(ws)
+    const existingNomi = new Set((ambitiList ?? []).map(a => a.nome.toLowerCase()))
+    let added = 0, skipped = 0
+    for (const row of rows) {
+      const nome = String(row.Nome ?? '').trim()
+      const descrizione = String(row.Descrizione ?? '').trim()
+      if (!nome || !descrizione) continue
+      if (existingNomi.has(nome.toLowerCase())) { skipped++; continue }
+      await createAmbito({ nome, descrizione })
+      added++
+    }
+    e.target.value = ''
+    if (skipped > 0) {
+      window.alert(`Import completato: ${added} aggiunti, ${skipped} saltati (già presenti).`)
+    } else if (added > 0) {
+      window.alert(`Import completato: ${added} ambiti aggiunti.`)
+    }
+  }
+
   const handleMigrate = async () => {
     setIsSubmitting(true)
     try {
@@ -110,7 +146,15 @@ export default function AmbitiList() {
           <h1 className="text-2xl font-bold text-slate-900">Ambiti</h1>
           <p className="text-slate-500 text-sm mt-1">Ambiti formativi dei corsi</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex items-center gap-2">
+          <button onClick={downloadTemplate} className="btn-secondary">
+            <Download className="w-4 h-4" />
+            Scarica template
+          </button>
+          <button onClick={() => fileInputRef.current?.click()} className="btn-secondary">
+            <Upload className="w-4 h-4" />
+            Carica Ambiti da Excel
+          </button>
           {isEmpty && (
             <button
               onClick={handleMigrate}
@@ -126,6 +170,7 @@ export default function AmbitiList() {
             <Plus className="w-4 h-4" />
             Nuovo Ambito
           </button>
+          <input ref={fileInputRef} type="file" accept=".xlsx,.xls" hidden onChange={handleImportFile} />
         </div>
       </div>
 
